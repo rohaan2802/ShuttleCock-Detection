@@ -1,0 +1,49 @@
+Viva Questions (With Smart Answers)
+
+1️. Why did you choose Raspberry Pi + Arduino instead of only Raspberry Pi?
+
+Answer:
+Raspberry Pi is excellent for computationally intensive tasks such as running machine learning models. However, it is not optimized for real-time motor control. Arduino, being a microcontroller, provides precise real-time execution for PID motor control and sensor reading. This hybrid architecture improves system stability and performance.
+
+2️. Why did you use PID control?
+
+Answer:
+PID control ensures accurate speed regulation and straight-line movement using encoder feedback. Without PID, motor speed variations would cause drift and inaccurate navigation.
+
+3️. Why not use Jetson Nano instead of Raspberry Pi?
+
+Answer:
+Jetson Nano provides higher AI performance but significantly increases cost and power consumption. For this academic project, Raspberry Pi offers a balanced trade-off between performance and affordability.
+
+4️. What challenges did you face during development?
+
+Answer:
+Major challenges included motor drift due to uneven torque, ML processing delay, and power instability. These were solved using encoder-based PID control, image resolution optimization, and voltage regulation modules.
+
+5️. How accurate is your shuttle detection system?
+
+Answer:
+Accuracy depends on lighting conditions and model training. With proper dataset tuning and lighting normalization, detection accuracy can exceed 85–90% under controlled indoor conditions.
+
+6. How can this project be improved in the future?
+
+Answer:
+Future improvements may include:
+
+SLAM-based localization
+
+AI accelerator integration
+
+Autonomous charging dock
+
+Multi-shuttle simultaneous collection
+
+7️. Why is common grounding important?
+
+Answer:
+Common grounding ensures all components share the same reference voltage, preventing unstable signals and communication errors between Raspberry Pi and Arduino.
+
+8️. How does the robot know where the drop zone is?
+
+Answer:
+The drop zone can be defined using coordinate tracking through encoder distance measurement or by using visual markers detected by the camera.
