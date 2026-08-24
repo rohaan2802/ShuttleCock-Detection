@@ -1,103 +1,170 @@
-# ShuttleCock Detection
+# ShuttleCock Detection (ShuttleBot)
 
-YOLOv8-based shuttlecock detection for an autonomous badminton court service robot (ShuttleBot), including trained weights, prediction runs, real-time inference, simulation assets, and robotics design reports.
+**YOLOv8n** shuttlecock detector for an autonomous badminton **service robot** (ShuttleBot): Colab training notebook, exported weights, prediction runs, **real-time webcam** inference with left/right/PICK actions, a simulation script, and robotics design / viva notes for a **Raspberry Pi + Arduino** stack.
 
-## Overview
+**Student ID:** i222327 · **Author:** Mohammad Rohaan · [rohaan2802](https://github.com/rohaan2802)
 
-Course / project repository combining computer vision and robotics systems design:
+---
 
-- Fine-tune Ultralytics YOLOv8n on shuttlecock imagery
-- Export best weights for offline and real-time detection
-- Document mechanical / ML design and viva answers for a Raspberry Pi + Arduino service robot
+## Table of contents
 
-Student ID on artifacts: i222327.
+1. [Project goal](#project-goal)
+2. [ML pipeline (notebook)](#ml-pipeline-notebook)
+3. [Training artifacts](#training-artifacts)
+4. [Real-time detector (`realtime_detect.py`)](#real-time-detector-realtime_detectpy)
+5. [Simulation](#simulation)
+6. [Robotics context (Pi + Arduino)](#robotics-context-pi--arduino)
+7. [Dataset](#dataset)
+8. [Repository layout](#repository-layout)
+9. [Install and run](#install-and-run)
+10. [Viva highlights](#viva-highlights)
+11. [Notes](#notes)
 
-## Highlights
+---
 
-| Component | Detail |
-|-----------|--------|
-| Detector | Ultralytics YOLOv8n |
-| Best weights | `My Drive/ShuttleBot/models/shuttle_yolov8n_best.pt` (also `ShuttleBotRealtime/models/`) |
-| Training run | `My Drive/ShuttleBot/runs/shuttle_train_v1/` (`args.yaml`, `results.csv`, `weights/best.pt`) |
-| Predictions | `My Drive/ShuttleBot/runs/predict_test_v1/` (annotated test frames) |
-| Notebook | `i222327_ML_FINALPROJECT.ipynb` |
-| Real-time script | `realtime_detect.py` |
-| Simulation | `Simulation.py` |
-| Detection log | `detection_log.csv` |
-| Dataset note | `My Drive/ShuttleBot/datasets/DataSet Link.txt` |
-| Viva notes | `ML A #01 (Viva Questions).txt` |
+## Project goal
 
-## ML Pipeline (notebook)
+Detect a **shuttlecock** in camera frames so a court robot can steer and pick it up. Computer vision runs on a class-capable SBC (Raspberry Pi); **PID motor control** and encoders stay on Arduino. This repo is the **detection / ML** side plus design PDFs.
 
-1. Install ultralytics and OpenCV; confirm GPU
-2. Mount Google Drive; extract merged YOLO dataset ZIP
-3. Inspect splits; create / verify dataset YAML
-4. Train from `yolov8n.pt`
-5. Copy `best.pt` to `shuttle_yolov8n_best.pt`
-6. Run prediction on test images; validate metrics
-7. Plot training curves (loss, precision, recall, mAP)
+---
 
-`shuttle_train_v1/results.csv` stores epoch-wise box/cls/dfl losses plus precision, recall, mAP50, and mAP50-95.
+## ML pipeline (notebook)
 
-## Robotics Context
+`i222327_ML_FINALPROJECT.ipynb` (Colab + Google Drive):
 
-Assignment PDFs, design reports, and viva notes describe a hybrid Raspberry Pi + Arduino shuttle-collection robot (Pi for camera / ML, Arduino for PID motor control). This README focuses on the detection / ML side.
+1. Install Ultralytics + OpenCV; check GPU.  
+2. Mount Drive; unzip the merged YOLO dataset.  
+3. Inspect train/val/test splits; write dataset YAML.  
+4. Fine-tune from `yolov8n.pt`.  
+5. Copy `best.pt` → `shuttle_yolov8n_best.pt`.  
+6. Predict on test images; log metrics.  
+7. Plot box/cls/dfl loss, precision, recall, mAP50, mAP50-95.
 
-## Notable Files
+---
 
-```
+## Training artifacts
+
+| Path (Drive layout) | Contents |
+|---------------------|----------|
+| `My Drive/ShuttleBot/runs/shuttle_train_v1/` | `args.yaml`, `results.csv`, `weights/best.pt` |
+| `My Drive/ShuttleBot/models/shuttle_yolov8n_best.pt` | Frozen export |
+| `ShuttleBotRealtime/models/shuttle_yolov8n_best.pt` | Copy for the realtime script |
+| `runs/predict_test_v1/` | Annotated test JPGs (large) |
+
+`results.csv` is epoch-wise: train/val box, cls, dfl losses + P, R, mAP50, mAP50-95.  
+`args.yaml` stores Ultralytics hyperparameters from the training run.
+
+---
+
+## Real-time detector (`realtime_detect.py`)
+
+Webcam loop: YOLO detect → choose **action** from bbox vs frame center → overlay + CSV log.
+
+| CLI flag | Default | Meaning |
+|----------|---------|---------|
+| `--model` | `ShuttleBotRealtime/models/shuttle_yolov8n_best.pt` | Weights |
+| `--camera-index` | `0` | OpenCV device |
+| `--conf` | `0.35` | Confidence gate |
+| `--iou` | `0.5` | NMS IoU |
+| `--imgsz` | `640` | Inference size |
+| `--x-thresh` | `40` | Pixels from center before LEFT/RIGHT |
+| `--pick-area-thresh` | `0.08` | Normalized bbox area → **PICK** (object near) |
+| `--log-csv` | `detection_log.csv` | Per-frame log |
+
+Typical actions: **LEFT / RIGHT / FORWARD / PICK / SEARCH** (exact labels in the draw/log loop). FPS is computed with `time`. Quit with the OpenCV window key used in `main()` (usually `q`).
+
+`detection_log.csv` columns include timestamps, detections, and the chosen action (see header after first run).
+
+---
+
+## Simulation
+
+`Simulation.py` — kinematics / collection simulation assets for the robot (pair with the design PDFs). Run after reading the file’s `if __name__` block for required windows or parameters.
+
+---
+
+## Robotics context (Pi + Arduino)
+
+From `ML_A_#01_(Viva_Questions).txt` and the design PDFs:
+
+| Topic | Design choice |
+|-------|----------------|
+| Why Pi + Arduino | Pi for ML/camera; Arduino for **real-time PID** + encoders |
+| Why PID | Straight-line speed, less motor drift |
+| Why not Jetson | Cost / power for an academic build |
+| Grounding | Common GND between Pi and Arduino |
+| Drop zone | Encoders and/or visual markers |
+| Claimed detection | ~85–90% indoor with lighting control |
+| Future | SLAM, AI accelerator, dock, multi-shuttle |
+
+PDFs in the original repo: Shuttle Bot design/ML reports, mechanical design, assignment briefs, object-detection notes.
+
+---
+
+## Dataset
+
+Note file: Kaggle [shuttle-badminton-photos](https://www.kaggle.com/datasets/ayushsinha731/shuttle-badminton-photos) plus a merged YOLO-format ZIP used in Colab.
+
+---
+
+## Repository layout
+
+```text
 ShuttleCock-Detection/
 ├── i222327_ML_FINALPROJECT.ipynb
 ├── realtime_detect.py
 ├── Simulation.py
 ├── detection_log.csv
-├── ML A #01 (Viva Questions).txt
-├── Asg-1-Shuttle Bot-Robotics-Sp 2026.pdf
-├── A#01_Sec_A.pdf
-├── 787410299-Robotics-Assignment-1.pdf
-├── Shuttle Bot ML Design.pdf
-├── Shuttle Bot Design Report.pdf
-├── Mechanical_Design_of_Service_Robot_for_Shuttlecock.pdf
-├── Object Detection Models Explained.pdf
+├── results.csv
+├── args.yaml
+├── ML_A_#01_(Viva_Questions).txt
+├── My_Drive_ShuttleBot_datasets_DataSet_Link.txt
 ├── ShuttleBotRealtime/models/shuttle_yolov8n_best.pt
-└── My Drive/ShuttleBot/
-    ├── datasets/DataSet Link.txt
-    ├── models/shuttle_yolov8n_best.pt
-    └── runs/
-        ├── shuttle_train_v1/
-        └── predict_test_v1/
+└── My Drive/ShuttleBot/runs/{shuttle_train_v1,predict_test_v1}/
 ```
 
-The repository is large mainly because of prediction JPGs under `predict_test_v1/`.
+---
 
-## Tech Stack
-
-Python 3 · PyTorch (via Ultralytics) · YOLOv8 · OpenCV · NumPy · Matplotlib · pandas · Google Colab
-
-## Getting Started
+## Install and run
 
 ```bash
 pip install ultralytics opencv-python
 ```
 
+Offline predict:
+
 ```python
 from ultralytics import YOLO
-
-model = YOLO("My Drive/ShuttleBot/models/shuttle_yolov8n_best.pt")
-model.predict(source="path/to/images_or_video", conf=0.25, save=True)
+model = YOLO("ShuttleBotRealtime/models/shuttle_yolov8n_best.pt")
+model.predict(source="images_or_video", conf=0.25, save=True)
 ```
+
+Webcam:
 
 ```bash
-python realtime_detect.py
+python realtime_detect.py --conf 0.35 --x-thresh 40 --pick-area-thresh 0.08
 ```
 
-Retrain with `i222327_ML_FINALPROJECT.ipynb` (update Drive / dataset paths for local runs).
+Retrain: open the notebook; retarget Drive paths for local runs.
+
+---
+
+## Viva highlights
+
+- Hybrid SBC + MCU: compute vs hard real-time.  
+- PID + encoders vs open-loop motors.  
+- Lighting and dataset quality dominate mAP.  
+- Common ground and regulated 5 V / 12 V rails.  
+- Do not clone `predict_test_v1` JPGs if you only need weights.
+
+---
 
 ## Notes
 
-- Notebook paths assume the original Colab + Google Drive layout.
-- For a lean clone, keep `models/` and `runs/shuttle_train_v1/weights/`; omit `predict_test_v1` images if needed.
+Notebook paths assume Colab Drive. For a lean clone keep `models/` and `runs/shuttle_train_v1/weights/`.
+
+---
 
 ## Author
 
-Mohammad Rohaan — i222327 · [rohaan2802](https://github.com/rohaan2802)
+**Mohammad Rohaan** — i222327 · [rohaan2802](https://github.com/rohaan2802)
