@@ -1,5 +1,6 @@
 """
 Live shuttlecock detection — camera only, no database, no file logging.
+Works locally and on Hugging Face Spaces.
 """
 
 from __future__ import annotations
@@ -10,22 +11,32 @@ import cv2
 import gradio as gr
 from ultralytics import YOLO
 
-ROOT = Path(__file__).resolve().parents[1]
-MODEL_PATH = ROOT / "ShuttleBotRealtime" / "models" / "shuttle_yolov8n_best.pt"
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
+
+# Prefer local webapp/models (HF Space), then repo weights path.
+_CANDIDATES = [
+    HERE / "models" / "shuttle_yolov8n_best.pt",
+    ROOT / "ShuttleBotRealtime" / "models" / "shuttle_yolov8n_best.pt",
+]
 
 _model: YOLO | None = None
+
+
+def resolve_model_path() -> Path:
+    for path in _CANDIDATES:
+        if path.is_file():
+            return path
+    raise FileNotFoundError(
+        "Detection model is missing. Refresh the page, or contact the site owner."
+    )
 
 
 def load_model() -> YOLO:
     global _model
     if _model is not None:
         return _model
-    if not MODEL_PATH.is_file():
-        raise FileNotFoundError(
-            "The detection model file is not available. "
-            "Make sure ShuttleBotRealtime/models/shuttle_yolov8n_best.pt is in this project."
-        )
-    _model = YOLO(str(MODEL_PATH))
+    _model = YOLO(str(resolve_model_path()))
     return _model
 
 
@@ -105,7 +116,7 @@ theme = gr.themes.Base(
 
 
 def build_app() -> gr.Blocks:
-    with gr.Blocks(title="Shuttlecock Detection", theme=theme, css=CUSTOM_CSS) as demo:
+    with gr.Blocks(title="Shuttlecock Detection", theme=theme, css=CUSTOM_CSS) as blocks:
         gr.Markdown(
             """
             # Shuttlecock Detection
@@ -143,12 +154,14 @@ def build_app() -> gr.Blocks:
             inputs=[camera, confidence],
             outputs=[output, coords],
             time_limit=None,
-            stream_every=0.15,
+            stream_every=0.2,
         )
 
-    return demo
+    return blocks
 
+
+demo = build_app()
+demo.queue(max_size=2)
 
 if __name__ == "__main__":
-    app = build_app()
-    app.queue(max_size=2).launch(server_name="0.0.0.0", server_port=7860)
+    demo.launch(server_name="0.0.0.0", server_port=7860)

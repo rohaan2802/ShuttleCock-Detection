@@ -1,6 +1,7 @@
-# Live webcam shuttlecock detection (Gradio + Ultralytics)
+# CPU-friendly stack for Hugging Face Spaces + local run
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.0.0
 gradio>=4.44.0,<6
 ultralytics>=8.3.0
 opencv-python-headless>=4.8.0
 numpy>=1.24.0
-torch>=2.0.0
