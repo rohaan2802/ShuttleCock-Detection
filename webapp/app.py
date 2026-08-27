@@ -30,8 +30,6 @@ _CANDIDATES = [
 
 _model: YOLO | None = None
 
-# Continuous no-shuttle before camera stops (avoids flicker on 1–2 frames).
-NO_DETECT_BEFORE_STOP_SEC = 2.0
 # Status / error text stays visible this long, then clears.
 MESSAGE_VISIBLE_SEC = 5.0
 
@@ -42,19 +40,6 @@ MSG_MODEL_MISSING = (
 )
 MSG_MODEL_FAIL = "Could not start the detector. Refresh the page and try again."
 MSG_DETECT_FAIL = "Detection failed on this frame. Check lighting and try again."
-
-STOP_CAMERA_SCRIPT = """
-<script>
-(function () {
-  document.querySelectorAll("video").forEach(function (video) {
-    var stream = video.srcObject;
-    if (!stream) return;
-    stream.getTracks().forEach(function (track) { track.stop(); });
-    video.srcObject = null;
-  });
-})();
-</script>
-"""
 
 
 def resolve_model_path() -> Path:
@@ -88,56 +73,32 @@ def format_coordinates(result) -> str:
     return "\n".join(lines)
 
 
-def status_html(message: str, *, stop_camera: bool = False) -> str:
-    if not message and not stop_camera:
-        return ""
-    stop = STOP_CAMERA_SCRIPT if stop_camera else ""
+def status_html(message: str) -> str:
     if not message:
-        return stop
-    return (
-        f'<div class="status-banner">{message}</div>'
-        f"{stop}"
-    )
+        return ""
+    return f'<div class="status-banner">{message}</div>'
 
 
-def detect(frame, confidence: float, miss_since: float | None, camera_armed: bool):
+def detect(frame, confidence: float, miss_since: float | None):
     """
-    Returns:
-      annotated image, coordinates, status HTML, miss_since, camera_armed, timer_active
+    Camera always stays on. No-shuttle / error text shows for 5s then clears.
+    Returns: annotated, coordinates, status HTML, miss_since, timer update
     """
-    if not camera_armed:
-        return None, "", "", miss_since, False, gr.update()
-
     if frame is None:
         return (
             None,
             "",
             status_html(MSG_WAIT_CAMERA),
             None,
-            True,
             gr.update(active=True),
         )
 
     try:
         model = load_model()
     except FileNotFoundError as exc:
-        return (
-            frame,
-            "",
-            status_html(str(exc), stop_camera=True),
-            None,
-            False,
-            gr.update(active=True),
-        )
+        return frame, "", status_html(str(exc)), None, gr.update(active=True)
     except Exception:
-        return (
-            frame,
-            "",
-            status_html(MSG_MODEL_FAIL, stop_camera=True),
-            None,
-            False,
-            gr.update(active=True),
-        )
+        return frame, "", status_html(MSG_MODEL_FAIL), None, gr.update(active=True)
 
     try:
         conf = float(confidence)
@@ -149,33 +110,23 @@ def detect(frame, confidence: float, miss_since: float | None, camera_armed: boo
         annotated_bgr = result.plot()
         annotated = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
     except Exception:
+        return frame, "", status_html(MSG_DETECT_FAIL), None, gr.update(active=True)
+
+    if found:
+        return annotated, format_coordinates(result), "", None, gr.update()
+
+    # First frame of a miss streak → show message once for 5 seconds (camera stays on).
+    if miss_since is None:
         return (
-            frame,
+            annotated,
             "",
-            status_html(MSG_DETECT_FAIL, stop_camera=True),
-            None,
-            False,
+            status_html(MSG_NO_SHUTTLE),
+            time.time(),
             gr.update(active=True),
         )
 
-    if found:
-        return annotated, format_coordinates(result), "", None, True, gr.update()
-
-    now = time.time()
-    started = now if miss_since is None else miss_since
-    if now - started < NO_DETECT_BEFORE_STOP_SEC:
-        # Still live — keep camera on; no lasting text yet.
-        return annotated, "", "", started, True, gr.update()
-
-    # No shuttle for long enough → stop camera + show message for 5s.
-    return (
-        None,
-        "",
-        status_html(MSG_NO_SHUTTLE, stop_camera=True),
-        None,
-        False,
-        gr.update(active=True),
-    )
+    # Still missing — keep camera live; do not refresh the 5s message every frame.
+    return annotated, "", gr.update(), miss_since, gr.update()
 
 
 CUSTOM_CSS = """
@@ -232,7 +183,6 @@ def build_app() -> gr.Blocks:
         )
 
         miss_since = gr.State(None)
-        camera_armed = gr.State(True)
 
         with gr.Row(equal_height=True):
             camera = gr.Image(
@@ -261,12 +211,11 @@ def build_app() -> gr.Blocks:
             label="Detection sensitivity",
             info="Lower finds more (may include false alerts). Higher is stricter.",
         )
-        restart = gr.Button("Start camera again", variant="primary")
 
         camera.stream(
             fn=detect,
-            inputs=[camera, confidence, miss_since, camera_armed],
-            outputs=[output, coords, status, miss_since, camera_armed, msg_timer],
+            inputs=[camera, confidence, miss_since],
+            outputs=[output, coords, status, miss_since, msg_timer],
             time_limit=None,
             stream_every=0.2,
         )
@@ -275,14 +224,6 @@ def build_app() -> gr.Blocks:
             return "", gr.update(active=False)
 
         msg_timer.tick(fn=clear_status, outputs=[status, msg_timer])
-
-        def restart_camera():
-            return True, None, "", None, ""
-
-        restart.click(
-            fn=restart_camera,
-            outputs=[camera_armed, miss_since, status, output, coords],
-        )
 
     return blocks
 
