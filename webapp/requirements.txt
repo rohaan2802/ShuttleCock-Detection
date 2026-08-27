@@ -1,0 +1,6 @@
+# Live webcam shuttlecock detection (Gradio + Ultralytics)
+gradio>=4.44.0,<6
+ultralytics>=8.3.0
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+torch>=2.0.0

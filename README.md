@@ -125,27 +125,38 @@ ShuttleCock-Detection/
 
 ---
 
-## Install and run
-
+## Install and run 
+ 
 ```bash
 pip install ultralytics opencv-python
 ```
-
-Offline predict:
-
+ 
+Offline predict: 
+ 
 ```python
 from ultralytics import YOLO
 model = YOLO("ShuttleBotRealtime/models/shuttle_yolov8n_best.pt")
 model.predict(source="images_or_video", conf=0.25, save=True)
 ```
-
-Webcam:
-
+ 
+Webcam: 
+ 
 ```bash
 python realtime_detect.py --conf 0.35 --x-thresh 40 --pick-area-thresh 0.08
 ```
-
-Retrain: open the notebook; retarget Drive paths for local runs.
+ 
+### Live web page (camera + coordinates only)
+ 
+Dark Gradio UI — no database, no CSV. Uses the trained weights above.
+ 
+```bash
+pip install -r webapp/requirements.txt
+python webapp/app.py
+```
+ 
+Then open `http://127.0.0.1:7860` and allow the camera. Details: [`webapp/README.md`](webapp/README.md).
+ 
+Retrain: open the notebook; retarget Drive paths for local runs. 
 
 ---
 
