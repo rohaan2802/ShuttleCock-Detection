@@ -155,6 +155,8 @@ python webapp/app.py
 ```
  
 Then open `http://127.0.0.1:7860` and allow the camera. Details: [`webapp/README.md`](webapp/README.md).
+
+**Free online host:** [Hugging Face Spaces](https://huggingface.co/new-space) — step-by-step: [`DEPLOY-HF.md`](DEPLOY-HF.md).
  
 Retrain: open the notebook; retarget Drive paths for local runs. 
 
