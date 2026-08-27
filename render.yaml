@@ -1,0 +1,21 @@
+# Render Blueprint — free web service with auto cold-start on link click
+# Dashboard: https://dashboard.render.com
+#
+# After sleep (~15 min idle), the next visitor wakes the service (30–90s).
+# That is the behaviour Colab/ngrok does NOT provide.
+
+services:
+  - type: web
+    name: shuttlecock-detection
+    runtime: docker
+    plan: free
+    rootDir: webapp
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: MKL_NUM_THREADS
+        value: "1"

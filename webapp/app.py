@@ -853,20 +853,33 @@ def pick_port(preferred: int = 7860, fallbacks: int = 15) -> int:
 
 
 if __name__ == "__main__":
-    port = pick_port(7860)
-    url = f"http://127.0.0.1:{port}"
+    # Cloud hosts (Render, etc.) inject PORT and need 0.0.0.0.
+    cloud_port = os.environ.get("PORT", "").strip()
     share = ("--share" in sys.argv) or (os.environ.get("GRADIO_SHARE", "").strip() == "1")
 
-    def open_when_ready() -> None:
-        for _ in range(80):
-            if port_in_use(port):
-                webbrowser.open(url)
-                return
-            time.sleep(0.25)
+    if cloud_port:
+        port = int(cloud_port)
+        host = "0.0.0.0"
+        open_browser = False
+    else:
+        port = pick_port(7860)
+        host = "127.0.0.1"
+        open_browser = not share
 
-    threading.Thread(target=open_when_ready, daemon=True).start()
+    url = f"http://127.0.0.1:{port}"
+
+    if open_browser:
+        def open_when_ready() -> None:
+            for _ in range(80):
+                if port_in_use(port):
+                    webbrowser.open(url)
+                    return
+                time.sleep(0.25)
+
+        threading.Thread(target=open_when_ready, daemon=True).start()
+
     demo.launch(
-        server_name="127.0.0.1",
+        server_name=host,
         server_port=port,
         inbrowser=False,
         show_error=True,
