@@ -22,7 +22,6 @@ from ultralytics import YOLO
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 
-# Prefer local webapp/models (HF Space), then repo weights path.
 _CANDIDATES = [
     HERE / "models" / "shuttle_yolov8n_best.pt",
     ROOT / "ShuttleBotRealtime" / "models" / "shuttle_yolov8n_best.pt",
@@ -30,7 +29,6 @@ _CANDIDATES = [
 
 _model: YOLO | None = None
 
-# Status / error text stays visible this long, then clears.
 MESSAGE_VISIBLE_SEC = 5.0
 
 MSG_NO_SHUTTLE = "No detection of shuttle"
@@ -40,6 +38,26 @@ MSG_MODEL_MISSING = (
 )
 MSG_MODEL_FAIL = "Could not start the detector. Refresh the page and try again."
 MSG_DETECT_FAIL = "Detection failed on this frame. Check lighting and try again."
+
+STOP_TRACKS_JS = """
+() => {
+  document.querySelectorAll("video").forEach((video) => {
+    const stream = video.srcObject;
+    if (!stream) return;
+    stream.getTracks().forEach((track) => track.stop());
+    video.srcObject = null;
+  });
+}
+"""
+
+IDLE_HTML = """
+<div class="idle-stage">
+  <div class="idle-orb" aria-hidden="true"></div>
+  <p class="idle-kicker">Live detector</p>
+  <h2 class="idle-title">Shuttlecock Detection</h2>
+  <p class="idle-copy">One screen — camera and detection together. Tap Access webcam to begin.</p>
+</div>
+"""
 
 
 def resolve_model_path() -> Path:
@@ -76,17 +94,17 @@ def format_coordinates(result) -> str:
 def status_html(message: str) -> str:
     if not message:
         return ""
-    return f'<div class="status-banner">{message}</div>'
+    return f'<div class="status-banner" role="status">{message}</div>'
 
 
-def detect(frame, confidence: float, miss_since: float | None):
-    """
-    Camera always stays on. No-shuttle / error text shows for 5s then clears.
-    Returns: annotated, coordinates, status HTML, miss_since, timer update
-    """
+def detect(frame, confidence: float, miss_since: float | None, running: bool):
+    """Draw boxes on the same live view. Camera stays on when shuttle is missing."""
+    if not running:
+        return gr.update(), "", gr.update(), miss_since, gr.update()
+
     if frame is None:
         return (
-            None,
+            gr.update(),
             "",
             status_html(MSG_WAIT_CAMERA),
             None,
@@ -101,21 +119,17 @@ def detect(frame, confidence: float, miss_since: float | None):
         return frame, "", status_html(MSG_MODEL_FAIL), None, gr.update(active=True)
 
     try:
-        conf = float(confidence)
-        conf = min(0.9, max(0.15, conf))
-        results = model.predict(source=frame, conf=conf, imgsz=640, verbose=False)
-        result = results[0]
+        conf = min(0.9, max(0.15, float(confidence)))
+        result = model.predict(source=frame, conf=conf, imgsz=640, verbose=False)[0]
         boxes = result.boxes
         found = boxes is not None and len(boxes) > 0
-        annotated_bgr = result.plot()
-        annotated = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
+        annotated = cv2.cvtColor(result.plot(), cv2.COLOR_BGR2RGB)
     except Exception:
         return frame, "", status_html(MSG_DETECT_FAIL), None, gr.update(active=True)
 
     if found:
         return annotated, format_coordinates(result), "", None, gr.update()
 
-    # First frame of a miss streak → show message once for 5 seconds (camera stays on).
     if miss_since is None:
         return (
             annotated,
@@ -125,30 +139,234 @@ def detect(frame, confidence: float, miss_since: float | None):
             gr.update(active=True),
         )
 
-    # Still missing — keep camera live; do not refresh the 5s message every frame.
     return annotated, "", gr.update(), miss_since, gr.update()
 
 
 CUSTOM_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
 :root {
-  --body-bg: #0b0f14;
+  --bg0: #070b12;
+  --bg1: #0e1624;
+  --bg2: #152033;
+  --line: #243247;
+  --text: #e8eef7;
+  --muted: #93a4bd;
+  --accent: #2dd4bf;
+  --accent-2: #38bdf8;
+  --danger: #fb7185;
+  --radius: 18px;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
 }
+
+html, body {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(45, 212, 191, 0.16), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(56, 189, 248, 0.12), transparent 50%),
+    var(--bg0) !important;
+}
+
 .gradio-container {
-  max-width: 1100px !important;
+  max-width: 920px !important;
+  width: min(920px, 100%) !important;
   margin: 0 auto !important;
-  font-family: "Segoe UI", system-ui, sans-serif !important;
+  padding: 0.75rem !important;
+  font-family: "Outfit", system-ui, sans-serif !important;
+  color: var(--text) !important;
 }
-footer { display: none !important; }
+
+footer, .svelte-1ipelgc { display: none !important; }
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.hero-card, .stage-card, .panel-card {
+  background: linear-gradient(180deg, rgba(21, 32, 51, 0.92), rgba(14, 22, 36, 0.96));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+}
+
+.hero-card h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 4.2vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(90deg, #f8fafc, #99f6e4 55%, #7dd3fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-card p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: clamp(0.9rem, 2.6vw, 1rem);
+  line-height: 1.45;
+}
+
+.stage-card {
+  padding: 0.65rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.idle-stage {
+  position: relative;
+  min-height: clamp(240px, 52vh, 480px);
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(45, 212, 191, 0.08), transparent 40%),
+    linear-gradient(180deg, #101a2a, #0b1320);
+  border: 1px dashed rgba(45, 212, 191, 0.35);
+}
+
+.idle-orb {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #5eead4, #0f766e 70%);
+  box-shadow: 0 0 0 10px rgba(45, 212, 191, 0.12), 0 12px 40px rgba(45, 212, 191, 0.35);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.88; }
+}
+
+.idle-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.idle-title {
+  margin: 0.35rem 0;
+  font-size: clamp(1.25rem, 4vw, 1.7rem);
+  font-weight: 700;
+}
+
+.idle-copy {
+  margin: 0 auto;
+  max-width: 28rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+#main-stage video,
+#main-stage img,
+#main-stage .image-container {
+  width: 100% !important;
+  max-height: min(68vh, 560px) !important;
+  object-fit: contain !important;
+  border-radius: 14px !important;
+  background: #05080f !important;
+}
+
+.controls-row {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 0.65rem !important;
+  align-items: stretch !important;
+}
+
+.controls-row > * {
+  flex: 1 1 160px;
+}
+
+button.access-btn, button.stop-btn {
+  min-height: 48px !important;
+  border-radius: 14px !important;
+  font-family: "Outfit", system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.01em !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease !important;
+}
+
+button.access-btn {
+  background: linear-gradient(135deg, #14b8a6, #0ea5e9) !important;
+  color: #042f2e !important;
+  border: none !important;
+  box-shadow: 0 10px 28px rgba(20, 184, 166, 0.35) !important;
+}
+
+button.stop-btn {
+  background: linear-gradient(135deg, #fb7185, #f43f5e) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 10px 28px rgba(244, 63, 94, 0.28) !important;
+}
+
+button.access-btn:hover, button.stop-btn:hover {
+  transform: translateY(-1px) scale(1.01);
+  filter: brightness(1.05);
+}
+
+button.access-btn:active, button.stop-btn:active {
+  transform: translateY(0) scale(0.99);
+}
+
 .status-banner {
-  margin: 0.75rem 0 0;
-  padding: 0.9rem 1.1rem;
-  border-radius: 10px;
-  background: #1a2332;
-  border: 1px solid #334155;
-  color: #f8fafc;
-  font-size: 1.05rem;
+  margin-top: 0.35rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(251, 113, 133, 0.12);
+  border: 1px solid rgba(251, 113, 133, 0.35);
+  color: #fecdd3;
+  font-size: clamp(0.92rem, 2.8vw, 1.05rem);
   font-weight: 600;
   text-align: center;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.coords-box textarea {
+  font-family: "JetBrains Mono", ui-monospace, monospace !important;
+  font-size: 0.86rem !important;
+  line-height: 1.45 !important;
+}
+
+input[type="range"] {
+  accent-color: var(--accent) !important;
+}
+
+@media (max-width: 640px) {
+  .gradio-container { padding: 0.45rem !important; }
+  .hero-card, .stage-card, .panel-card { padding: 0.8rem; border-radius: 14px; }
+  .controls-row > * { flex: 1 1 100%; }
+  #main-stage video, #main-stage img {
+    max-height: min(58vh, 420px) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .gradio-container { padding: 1.25rem !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idle-orb, button.access-btn, button.stop-btn, .status-banner {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 """
 
@@ -156,66 +374,145 @@ theme = gr.themes.Base(
     primary_hue="teal",
     secondary_hue="slate",
     neutral_hue="slate",
-    font=gr.themes.GoogleFont("DM Sans"),
+    font=gr.themes.GoogleFont("Outfit"),
+    font_mono=gr.themes.GoogleFont("JetBrains Mono"),
 ).set(
-    body_background_fill="#0b0f14",
-    body_background_fill_dark="#0b0f14",
-    block_background_fill="#121821",
-    block_background_fill_dark="#121821",
-    block_border_color="#1e293b",
-    block_label_text_color="#e2e8f0",
-    body_text_color="#e2e8f0",
-    button_primary_background_fill="#0d9488",
-    button_primary_background_fill_hover="#14b8a6",
-    button_primary_text_color="#04110f",
-    border_color_primary="#334155",
-    input_background_fill="#0f172a",
+    body_background_fill="#070b12",
+    body_background_fill_dark="#070b12",
+    block_background_fill="#0e1624",
+    block_background_fill_dark="#0e1624",
+    block_border_color="#243247",
+    block_label_text_color="#e8eef7",
+    body_text_color="#e8eef7",
+    button_primary_background_fill="#14b8a6",
+    button_primary_background_fill_hover="#2dd4bf",
+    button_primary_text_color="#042f2e",
+    border_color_primary="#243247",
+    input_background_fill="#101a2a",
 )
 
 
 def build_app() -> gr.Blocks:
     with gr.Blocks(title="Shuttlecock Detection", theme=theme, css=CUSTOM_CSS) as blocks:
-        gr.Markdown(
-            """
-            # Shuttlecock Detection
-            Allow camera access, then hold a shuttlecock in view. Boxes and coordinates update live.
-            """
-        )
-
+        running = gr.State(False)
         miss_since = gr.State(None)
 
-        with gr.Row(equal_height=True):
-            camera = gr.Image(
-                sources=["webcam"],
-                streaming=True,
-                type="numpy",
-                label="Live camera",
-                mirror_webcam=True,
+        with gr.Column(elem_classes=["app-shell"]):
+            gr.HTML(
+                """
+                <div class="hero-card">
+                  <h1>Shuttlecock Detection</h1>
+                  <p>Access webcam on one screen. Detection boxes and coordinates update live.</p>
+                </div>
+                """
             )
-            output = gr.Image(label="Detection", type="numpy")
 
-        coords = gr.Textbox(
-            label="Coordinates",
-            lines=4,
-            interactive=False,
-            placeholder="Coordinates appear here when a shuttlecock is found.",
+            with gr.Column(elem_classes=["stage-card"]):
+                idle = gr.HTML(IDLE_HTML, visible=True)
+                camera = gr.Image(
+                    sources=["webcam"],
+                    streaming=True,
+                    type="numpy",
+                    label="Live view",
+                    mirror_webcam=True,
+                    visible=False,
+                    elem_id="main-stage",
+                    show_download_button=False,
+                    show_share_button=False,
+                )
+
+            with gr.Row(elem_classes=["controls-row"]):
+                start_btn = gr.Button(
+                    "Access webcam",
+                    variant="primary",
+                    elem_classes=["access-btn"],
+                )
+                stop_btn = gr.Button(
+                    "Stop",
+                    variant="stop",
+                    visible=False,
+                    elem_classes=["stop-btn"],
+                )
+
+            status = gr.HTML(value="")
+            msg_timer = gr.Timer(value=MESSAGE_VISIBLE_SEC, active=False)
+
+            with gr.Column(elem_classes=["panel-card"]):
+                coords = gr.Textbox(
+                    label="Coordinates",
+                    lines=3,
+                    interactive=False,
+                    elem_classes=["coords-box"],
+                    placeholder="Coordinates appear when a shuttlecock is found.",
+                )
+                confidence = gr.Slider(
+                    minimum=0.2,
+                    maximum=0.7,
+                    value=0.35,
+                    step=0.05,
+                    label="Detection sensitivity",
+                    info="Lower finds more. Higher is stricter.",
+                )
+
+        def on_start():
+            return (
+                True,
+                None,
+                gr.update(visible=False),
+                gr.update(value=None, visible=True),
+                gr.update(visible=False),
+                gr.update(visible=True),
+                "",
+                "",
+            )
+
+        def on_stop():
+            return (
+                False,
+                None,
+                gr.update(visible=True, value=IDLE_HTML),
+                gr.update(value=None, visible=False),
+                gr.update(visible=True),
+                gr.update(visible=False),
+                "",
+                "",
+                gr.update(active=False),
+            )
+
+        start_btn.click(
+            fn=on_start,
+            outputs=[
+                running,
+                miss_since,
+                idle,
+                camera,
+                start_btn,
+                stop_btn,
+                coords,
+                status,
+            ],
         )
-        status = gr.HTML(value="")
-        msg_timer = gr.Timer(value=MESSAGE_VISIBLE_SEC, active=False)
 
-        confidence = gr.Slider(
-            minimum=0.2,
-            maximum=0.7,
-            value=0.35,
-            step=0.05,
-            label="Detection sensitivity",
-            info="Lower finds more (may include false alerts). Higher is stricter.",
+        stop_btn.click(
+            fn=on_stop,
+            outputs=[
+                running,
+                miss_since,
+                idle,
+                camera,
+                start_btn,
+                stop_btn,
+                coords,
+                status,
+                msg_timer,
+            ],
+            js=STOP_TRACKS_JS,
         )
 
         camera.stream(
             fn=detect,
-            inputs=[camera, confidence, miss_since],
-            outputs=[output, coords, status, miss_since, msg_timer],
+            inputs=[camera, confidence, miss_since, running],
+            outputs=[camera, coords, status, miss_since, msg_timer],
             time_limit=None,
             stream_every=0.2,
         )
@@ -239,7 +536,6 @@ def port_in_use(port: int, host: str = "127.0.0.1") -> bool:
 
 
 def pids_on_port(port: int) -> list[int]:
-    """Return PIDs listening on the given TCP port (Windows + Unix)."""
     pids: set[int] = set()
     if sys.platform.startswith("win"):
         try:
@@ -301,7 +597,6 @@ def pids_on_port(port: int) -> list[int]:
 
 
 def free_port(port: int) -> None:
-    """Stop whatever is holding the port so launch does not fail."""
     me = os.getpid()
     for pid in pids_on_port(port):
         if pid == me:
@@ -327,7 +622,6 @@ def free_port(port: int) -> None:
 
 
 def pick_port(preferred: int = 7860, fallbacks: int = 15) -> int:
-    """Prefer preferred port (freeing it). If still blocked, use the next free one."""
     free_port(preferred)
     if not port_in_use(preferred):
         return preferred
@@ -346,7 +640,6 @@ def pick_port(preferred: int = 7860, fallbacks: int = 15) -> int:
 if __name__ == "__main__":
     port = pick_port(7860)
     url = f"http://127.0.0.1:{port}"
-    # Temporary public link (free): python webapp/app.py --share
     share = ("--share" in sys.argv) or (os.environ.get("GRADIO_SHARE", "").strip() == "1")
 
     def open_when_ready() -> None:
