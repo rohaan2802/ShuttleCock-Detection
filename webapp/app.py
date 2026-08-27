@@ -30,14 +30,38 @@ _CANDIDATES = [
 
 _model: YOLO | None = None
 
+# Continuous no-shuttle before camera stops (avoids flicker on 1–2 frames).
+NO_DETECT_BEFORE_STOP_SEC = 2.0
+# Status / error text stays visible this long, then clears.
+MESSAGE_VISIBLE_SEC = 5.0
+
+MSG_NO_SHUTTLE = "No detection of shuttle"
+MSG_WAIT_CAMERA = "Waiting for camera… Allow access when the browser asks."
+MSG_MODEL_MISSING = (
+    "Detection model is missing. Refresh the page, or contact the site owner."
+)
+MSG_MODEL_FAIL = "Could not start the detector. Refresh the page and try again."
+MSG_DETECT_FAIL = "Detection failed on this frame. Check lighting and try again."
+
+STOP_CAMERA_SCRIPT = """
+<script>
+(function () {
+  document.querySelectorAll("video").forEach(function (video) {
+    var stream = video.srcObject;
+    if (!stream) return;
+    stream.getTracks().forEach(function (track) { track.stop(); });
+    video.srcObject = null;
+  });
+})();
+</script>
+"""
+
 
 def resolve_model_path() -> Path:
     for path in _CANDIDATES:
         if path.is_file():
             return path
-    raise FileNotFoundError(
-        "Detection model is missing. Refresh the page, or contact the site owner."
-    )
+    raise FileNotFoundError(MSG_MODEL_MISSING)
 
 
 def load_model() -> YOLO:
@@ -50,9 +74,6 @@ def load_model() -> YOLO:
 
 def format_coordinates(result) -> str:
     boxes = result.boxes
-    if boxes is None or len(boxes) == 0:
-        return "No shuttlecock in view"
-
     lines: list[str] = []
     for i, box in enumerate(boxes, start=1):
         x1, y1, x2, y2 = (float(v) for v in box.xyxy[0].tolist())
@@ -67,27 +88,94 @@ def format_coordinates(result) -> str:
     return "\n".join(lines)
 
 
-def detect(frame, confidence: float):
+def status_html(message: str, *, stop_camera: bool = False) -> str:
+    if not message and not stop_camera:
+        return ""
+    stop = STOP_CAMERA_SCRIPT if stop_camera else ""
+    if not message:
+        return stop
+    return (
+        f'<div class="status-banner">{message}</div>'
+        f"{stop}"
+    )
+
+
+def detect(frame, confidence: float, miss_since: float | None, camera_armed: bool):
+    """
+    Returns:
+      annotated image, coordinates, status HTML, miss_since, camera_armed, timer_active
+    """
+    if not camera_armed:
+        return None, "", "", miss_since, False, gr.update()
+
     if frame is None:
-        return None, "Waiting for camera… Allow access when the browser asks."
+        return (
+            None,
+            "",
+            status_html(MSG_WAIT_CAMERA),
+            None,
+            True,
+            gr.update(active=True),
+        )
 
     try:
         model = load_model()
     except FileNotFoundError as exc:
-        return frame, str(exc)
+        return (
+            frame,
+            "",
+            status_html(str(exc), stop_camera=True),
+            None,
+            False,
+            gr.update(active=True),
+        )
     except Exception:
-        return frame, "Could not start the detector. Refresh the page and try again."
+        return (
+            frame,
+            "",
+            status_html(MSG_MODEL_FAIL, stop_camera=True),
+            None,
+            False,
+            gr.update(active=True),
+        )
 
     try:
         conf = float(confidence)
         conf = min(0.9, max(0.15, conf))
         results = model.predict(source=frame, conf=conf, imgsz=640, verbose=False)
         result = results[0]
+        boxes = result.boxes
+        found = boxes is not None and len(boxes) > 0
         annotated_bgr = result.plot()
         annotated = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
-        return annotated, format_coordinates(result)
     except Exception:
-        return frame, "Detection failed on this frame. Check lighting and try again."
+        return (
+            frame,
+            "",
+            status_html(MSG_DETECT_FAIL, stop_camera=True),
+            None,
+            False,
+            gr.update(active=True),
+        )
+
+    if found:
+        return annotated, format_coordinates(result), "", None, True, gr.update()
+
+    now = time.time()
+    started = now if miss_since is None else miss_since
+    if now - started < NO_DETECT_BEFORE_STOP_SEC:
+        # Still live — keep camera on; no lasting text yet.
+        return annotated, "", "", started, True, gr.update()
+
+    # No shuttle for long enough → stop camera + show message for 5s.
+    return (
+        None,
+        "",
+        status_html(MSG_NO_SHUTTLE, stop_camera=True),
+        None,
+        False,
+        gr.update(active=True),
+    )
 
 
 CUSTOM_CSS = """
@@ -100,6 +188,17 @@ CUSTOM_CSS = """
   font-family: "Segoe UI", system-ui, sans-serif !important;
 }
 footer { display: none !important; }
+.status-banner {
+  margin: 0.75rem 0 0;
+  padding: 0.9rem 1.1rem;
+  border-radius: 10px;
+  background: #1a2332;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: center;
+}
 """
 
 theme = gr.themes.Base(
@@ -132,6 +231,9 @@ def build_app() -> gr.Blocks:
             """
         )
 
+        miss_since = gr.State(None)
+        camera_armed = gr.State(True)
+
         with gr.Row(equal_height=True):
             camera = gr.Image(
                 sources=["webcam"],
@@ -144,10 +246,13 @@ def build_app() -> gr.Blocks:
 
         coords = gr.Textbox(
             label="Coordinates",
-            lines=5,
+            lines=4,
             interactive=False,
             placeholder="Coordinates appear here when a shuttlecock is found.",
         )
+        status = gr.HTML(value="")
+        msg_timer = gr.Timer(value=MESSAGE_VISIBLE_SEC, active=False)
+
         confidence = gr.Slider(
             minimum=0.2,
             maximum=0.7,
@@ -156,13 +261,27 @@ def build_app() -> gr.Blocks:
             label="Detection sensitivity",
             info="Lower finds more (may include false alerts). Higher is stricter.",
         )
+        restart = gr.Button("Start camera again", variant="primary")
 
         camera.stream(
             fn=detect,
-            inputs=[camera, confidence],
-            outputs=[output, coords],
+            inputs=[camera, confidence, miss_since, camera_armed],
+            outputs=[output, coords, status, miss_since, camera_armed, msg_timer],
             time_limit=None,
             stream_every=0.2,
+        )
+
+        def clear_status():
+            return "", gr.update(active=False)
+
+        msg_timer.tick(fn=clear_status, outputs=[status, msg_timer])
+
+        def restart_camera():
+            return True, None, "", None, ""
+
+        restart.click(
+            fn=restart_camera,
+            outputs=[camera_armed, miss_since, status, output, coords],
         )
 
     return blocks
@@ -260,7 +379,6 @@ def free_port(port: int) -> None:
         except Exception:
             pass
 
-    # Brief wait for the OS to release the socket.
     for _ in range(20):
         if not port_in_use(port):
             return
@@ -279,7 +397,6 @@ def pick_port(preferred: int = 7860, fallbacks: int = 15) -> int:
         if not port_in_use(candidate):
             return candidate
 
-    # Last resort: let the OS assign an ephemeral free port.
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(("127.0.0.1", 0))
         return int(sock.getsockname()[1])
@@ -289,7 +406,6 @@ if __name__ == "__main__":
     port = pick_port(7860)
     url = f"http://127.0.0.1:{port}"
 
-    # Open the browser as soon as the server is reachable (more reliable than inbrowser alone).
     def open_when_ready() -> None:
         for _ in range(80):
             if port_in_use(port):
