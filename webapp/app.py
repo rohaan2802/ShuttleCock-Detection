@@ -5,6 +5,14 @@ Works locally and on Hugging Face Spaces.
 
 from __future__ import annotations
 
+import os
+import signal
+import socket
+import subprocess
+import sys
+import threading
+import time
+import webbrowser
 from pathlib import Path
 
 import cv2
@@ -163,5 +171,136 @@ def build_app() -> gr.Blocks:
 demo = build_app()
 demo.queue(max_size=2)
 
+
+def port_in_use(port: int, host: str = "127.0.0.1") -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(0.4)
+        return sock.connect_ex((host, port)) == 0
+
+
+def pids_on_port(port: int) -> list[int]:
+    """Return PIDs listening on the given TCP port (Windows + Unix)."""
+    pids: set[int] = set()
+    if sys.platform.startswith("win"):
+        try:
+            result = subprocess.run(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    f"(Get-NetTCPConnection -LocalPort {port} -State Listen "
+                    f"-ErrorAction SilentlyContinue).OwningProcess | Select-Object -Unique",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+            )
+            for token in result.stdout.split():
+                if token.isdigit():
+                    pid = int(token)
+                    if pid > 0:
+                        pids.add(pid)
+        except Exception:
+            pass
+        if not pids:
+            try:
+                result = subprocess.run(
+                    ["netstat", "-ano", "-p", "tcp"],
+                    capture_output=True,
+                    text=True,
+                    timeout=15,
+                    check=False,
+                )
+                needle = f":{port}"
+                for line in result.stdout.splitlines():
+                    if needle not in line or "LISTENING" not in line.upper():
+                        continue
+                    parts = line.split()
+                    if parts and parts[-1].isdigit():
+                        pid = int(parts[-1])
+                        if pid > 0:
+                            pids.add(pid)
+            except Exception:
+                pass
+    else:
+        try:
+            result = subprocess.run(
+                ["lsof", "-ti", f"tcp:{port}"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+            for token in result.stdout.split():
+                if token.isdigit():
+                    pids.add(int(token))
+        except Exception:
+            pass
+    return sorted(pids)
+
+
+def free_port(port: int) -> None:
+    """Stop whatever is holding the port so launch does not fail."""
+    me = os.getpid()
+    for pid in pids_on_port(port):
+        if pid == me:
+            continue
+        try:
+            if sys.platform.startswith("win"):
+                subprocess.run(
+                    ["taskkill", "/F", "/PID", str(pid)],
+                    capture_output=True,
+                    text=True,
+                    timeout=15,
+                    check=False,
+                )
+            else:
+                os.kill(pid, signal.SIGTERM)
+        except Exception:
+            pass
+
+    # Brief wait for the OS to release the socket.
+    for _ in range(20):
+        if not port_in_use(port):
+            return
+        time.sleep(0.15)
+
+
+def pick_port(preferred: int = 7860, fallbacks: int = 15) -> int:
+    """Prefer preferred port (freeing it). If still blocked, use the next free one."""
+    free_port(preferred)
+    if not port_in_use(preferred):
+        return preferred
+
+    for offset in range(1, fallbacks + 1):
+        candidate = preferred + offset
+        free_port(candidate)
+        if not port_in_use(candidate):
+            return candidate
+
+    # Last resort: let the OS assign an ephemeral free port.
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    port = pick_port(7860)
+    url = f"http://127.0.0.1:{port}"
+
+    # Open the browser as soon as the server is reachable (more reliable than inbrowser alone).
+    def open_when_ready() -> None:
+        for _ in range(80):
+            if port_in_use(port):
+                webbrowser.open(url)
+                return
+            time.sleep(0.25)
+
+    threading.Thread(target=open_when_ready, daemon=True).start()
+    demo.launch(
+        server_name="127.0.0.1",
+        server_port=port,
+        inbrowser=False,
+        show_error=True,
+    )

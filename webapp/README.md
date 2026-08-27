@@ -19,21 +19,14 @@ No database. Nothing is saved.
 
 ## Run locally
 
-From this folder (`webapp/`):
+**Windows:** double-click `run.bat` in the repo root (or `webapp\run.bat`).  
+The browser opens by itself. If port `7860` is busy, it is freed first.
 
 ```bash
-pip install -r requirements.txt
 python app.py
 ```
 
-Or from the repo root:
-
-```bash
-pip install -r webapp/requirements.txt
-python webapp/app.py
-```
-
-Open **http://127.0.0.1:7860** and allow camera access.
+From repo root: `python webapp/app.py`
 
 ## Deploy (Hugging Face Spaces)
 
