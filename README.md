@@ -11,7 +11,7 @@ This repository includes:
 - Robotics design / viva notes (Raspberry Pi + Arduino)
 - **Live Gradio web app** — browser webcam, boxes + coordinates only (no database, no Excel/CSV storage)
 
-**Student ID:** i222327 · **Author:** Mohammad Rohaan · [rohaan2802](https://github.com/rohaan2802)  
+**Student ID:** i222327 · **Author:** Mohammad Rohaan · [rohaan2802](https://github.com/rohaan2802)
 **GitHub repo:** https://github.com/rohaan2802/ShuttleCock-Detection
 
 ---
@@ -508,50 +508,37 @@ Kaggle source referenced in project notes: [shuttle-badminton-photos](https://ww
 
 ---
 
-## 16) Hosting / deploy (Hugging Face and free options)
+## 16) Hosting / deploy (free options)
 
-Full short guide: [`DEPLOY-HF.md`](DEPLOY-HF.md)
+### Recommended: Lightning AI Studio (sleep + auto-wake)
 
-### Hugging Face reality (important)
+If you want a **public link** that can **sleep when idle** and **start again when someone opens the URL** (PC can be off):
 
-On **Create new Space**, HF may show:
+→ Full guide: [`DEPLOY-LIGHTNING.md`](DEPLOY-LIGHTNING.md)
 
-> Gradio and Docker Spaces require a paid plan  
-> Static Spaces stay free
+Cloud start helper: `scripts/start-webapp-cloud.sh`
 
-| HF option | Use for this YOLO webcam app? |
-|-----------|-------------------------------|
-| **Gradio** (Python server) | Yes — but often needs **HF PRO** |
-| **Docker** | Possible — also paid plan on HF |
-| **Static / Gradio Lite** | **NO** — cannot run PyTorch YOLO server |
+### Gradio share (easy, laptop must stay on)
 
-**Do not** pick Static → Gradio Lite. It will not run this detector.
+```bat
+run-share.bat
+```
 
-### Free options that actually work
+or `python webapp/app.py --share` → temporary `*.gradio.live` link (~72h).  
+**No** cloud auto-wake — your PC must stay powered on.
 
-| Option | Cost | Notes |
-|--------|------|--------|
-| `run.bat` local | Free | Best reliability |
-| `run-share.bat` / `--share` | Free | Temporary `*.gradio.live`; PC must stay on |
-| Google Colab + Gradio share | Free | Temporary session |
-| Permanent HF Gradio Space | Paid (PRO) | Upload `webapp/` files |
+### Google Colab + share/ngrok
 
-### If you have HF Gradio (PRO) — upload these
+Temporary only. When the runtime dies, the link does **not** auto-restart on click. Use for short tests, not a stable demo.
 
-From `webapp/`:
+### Hugging Face Gradio Space
 
-- `app.py`  
-- `requirements.txt`  
-- `README.md` (keeps Space YAML header)  
-- `models/shuttle_yolov8n_best.pt`  
+Often needs **PRO** on new accounts. Static / Gradio Lite will **not** run YOLO. Details: [`DEPLOY-HF.md`](DEPLOY-HF.md)
 
-Live URL shape:
+### Why not Vercel / Netlify / Render (this guide)
 
-`https://huggingface.co/spaces/YOUR_USERNAME/shuttlecock-detection`
-
-### Why not Vercel / Netlify?
-
-Those are static/serverless hosts. This app needs a long-running Python process + PyTorch. **Not supported.**
+- Vercel/Netlify: no long-running PyTorch process  
+- Render: you asked to skip it  
 
 ---
 
@@ -640,5 +627,5 @@ Get-NetTCPConnection -LocalPort 7860 -ErrorAction SilentlyContinue |
 
 ## 22) Author
 
-**Mohammad Rohaan** — i222327 · [rohaan2802](https://github.com/rohaan2802)  
+**Mohammad Rohaan** — i222327 · [rohaan2802](https://github.com/rohaan2802)
 Repository: https://github.com/rohaan2802/ShuttleCock-Detection
