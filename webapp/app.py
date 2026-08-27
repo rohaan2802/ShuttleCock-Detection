@@ -41,6 +41,18 @@ MSG_DETECT_FAIL = "Detection failed on this frame. Check lighting and try again.
 
 STOP_TRACKS_JS = """
 () => {
+  const root = document.querySelector("#cam-engine");
+  if (root) {
+    const stopBtn = Array.from(root.querySelectorAll("button")).find((b) => {
+      const t = (
+        (b.textContent || "") +
+        (b.getAttribute("aria-label") || "") +
+        (b.getAttribute("title") || "")
+      ).toLowerCase();
+      return t.includes("stop") || !!b.querySelector('[title="stop recording"]');
+    });
+    if (stopBtn) stopBtn.click();
+  }
   document.querySelectorAll("video").forEach((video) => {
     const stream = video.srcObject;
     if (!stream) return;
@@ -50,12 +62,60 @@ STOP_TRACKS_JS = """
 }
 """
 
+# Gradio webcam needs an internal "Record" click to stream frames — do it automatically.
+AUTO_START_STREAM_JS = """
+() => {
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const textOf = (el) =>
+    (
+      (el.textContent || "") +
+      " " +
+      (el.getAttribute("aria-label") || "") +
+      " " +
+      (el.getAttribute("title") || "")
+    ).toLowerCase();
+
+  (async () => {
+    for (let i = 0; i < 60; i++) {
+      const root = document.querySelector("#cam-engine");
+      if (!root) {
+        await sleep(120);
+        continue;
+      }
+
+      const accessBtn = Array.from(root.querySelectorAll("button")).find((b) =>
+        textOf(b).includes("access webcam")
+      );
+      if (accessBtn) {
+        accessBtn.click();
+        await sleep(450);
+      }
+
+      const recordBtn = Array.from(root.querySelectorAll("button")).find((b) => {
+        if (b.querySelector('[title="stop recording"]')) return false;
+        if (b.querySelector('[title="start recording"]')) return true;
+        const t = textOf(b);
+        return t.includes("record") && !t.includes("stop");
+      });
+      if (recordBtn) {
+        recordBtn.click();
+        return;
+      }
+
+      // Already streaming
+      if (root.querySelector('[title="stop recording"]')) return;
+      await sleep(150);
+    }
+  })();
+}
+"""
+
 IDLE_HTML = """
 <div class="idle-stage">
   <div class="idle-orb" aria-hidden="true"></div>
   <p class="idle-kicker">Live detector</p>
   <h2 class="idle-title">Shuttlecock Detection</h2>
-  <p class="idle-copy">One screen — camera and detection together. Tap Access webcam to begin.</p>
+  <p class="idle-copy">Tap Access webcam — live detection and coordinates start automatically. No Record button needed.</p>
 </div>
 """
 
@@ -215,6 +275,42 @@ footer, .svelte-1ipelgc { display: none !important; }
   overflow: hidden;
 }
 
+.stage-stack {
+  position: relative;
+  min-height: clamp(240px, 52vh, 480px);
+}
+
+/* Webcam engine streams in the background; Gradio Record UI is auto-clicked and hidden. */
+#cam-engine {
+  position: absolute !important;
+  width: 2px !important;
+  height: 2px !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+#cam-engine .button-wrap {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+#main-stage {
+  position: relative !important;
+  z-index: 2;
+}
+
+#main-stage video,
+#main-stage img,
+#main-stage .image-container {
+  width: 100% !important;
+  max-height: min(68vh, 560px) !important;
+  object-fit: contain !important;
+  border-radius: 14px !important;
+  background: #05080f !important;
+}
+
 .idle-stage {
   position: relative;
   min-height: clamp(240px, 52vh, 480px);
@@ -265,16 +361,6 @@ footer, .svelte-1ipelgc { display: none !important; }
   color: var(--muted);
   font-size: 0.95rem;
   line-height: 1.45;
-}
-
-#main-stage video,
-#main-stage img,
-#main-stage .image-container {
-  width: 100% !important;
-  max-height: min(68vh, 560px) !important;
-  object-fit: contain !important;
-  border-radius: 14px !important;
-  background: #05080f !important;
 }
 
 .controls-row {
@@ -402,23 +488,36 @@ def build_app() -> gr.Blocks:
                 """
                 <div class="hero-card">
                   <h1>Shuttlecock Detection</h1>
-                  <p>Access webcam on one screen. Detection boxes and coordinates update live.</p>
+                  <p>One tap starts live detection. Coordinates update as the shuttlecock moves — no Record button.</p>
                 </div>
                 """
             )
 
-            with gr.Column(elem_classes=["stage-card"]):
+            with gr.Column(elem_classes=["stage-card", "stage-stack"]):
                 idle = gr.HTML(IDLE_HTML, visible=True)
+                # Hidden stream source (Gradio requires an internal record click; we auto-press it).
                 camera = gr.Image(
                     sources=["webcam"],
                     streaming=True,
                     type="numpy",
-                    label="Live view",
+                    label="Camera engine",
                     mirror_webcam=True,
                     visible=False,
+                    elem_id="cam-engine",
+                    show_download_button=False,
+                    show_share_button=False,
+                    show_fullscreen_button=False,
+                )
+                # What the user sees: live annotated frames + moving coordinates.
+                stage = gr.Image(
+                    type="numpy",
+                    label="Live detection",
+                    visible=False,
+                    interactive=False,
                     elem_id="main-stage",
                     show_download_button=False,
                     show_share_button=False,
+                    show_fullscreen_button=False,
                 )
 
             with gr.Row(elem_classes=["controls-row"]):
@@ -439,11 +538,11 @@ def build_app() -> gr.Blocks:
 
             with gr.Column(elem_classes=["panel-card"]):
                 coords = gr.Textbox(
-                    label="Coordinates",
+                    label="Live coordinates",
                     lines=3,
                     interactive=False,
                     elem_classes=["coords-box"],
-                    placeholder="Coordinates appear when a shuttlecock is found.",
+                    placeholder="Coordinates update live when a shuttlecock is found.",
                 )
                 confidence = gr.Slider(
                     minimum=0.2,
@@ -460,6 +559,7 @@ def build_app() -> gr.Blocks:
                 None,
                 gr.update(visible=False),
                 gr.update(value=None, visible=True),
+                gr.update(value=None, visible=True),
                 gr.update(visible=False),
                 gr.update(visible=True),
                 "",
@@ -471,6 +571,7 @@ def build_app() -> gr.Blocks:
                 False,
                 None,
                 gr.update(visible=True, value=IDLE_HTML),
+                gr.update(value=None, visible=False),
                 gr.update(value=None, visible=False),
                 gr.update(visible=True),
                 gr.update(visible=False),
@@ -486,11 +587,13 @@ def build_app() -> gr.Blocks:
                 miss_since,
                 idle,
                 camera,
+                stage,
                 start_btn,
                 stop_btn,
                 coords,
                 status,
             ],
+            js=AUTO_START_STREAM_JS,
         )
 
         stop_btn.click(
@@ -500,6 +603,7 @@ def build_app() -> gr.Blocks:
                 miss_since,
                 idle,
                 camera,
+                stage,
                 start_btn,
                 stop_btn,
                 coords,
@@ -509,12 +613,13 @@ def build_app() -> gr.Blocks:
             js=STOP_TRACKS_JS,
         )
 
+        # Never write detection back into the webcam component — that breaks live streaming.
         camera.stream(
             fn=detect,
             inputs=[camera, confidence, miss_since, running],
-            outputs=[camera, coords, status, miss_since, msg_timer],
+            outputs=[stage, coords, status, miss_since, msg_timer],
             time_limit=None,
-            stream_every=0.2,
+            stream_every=0.15,
         )
 
         def clear_status():
