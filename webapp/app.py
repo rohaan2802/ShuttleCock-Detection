@@ -17,6 +17,7 @@ from pathlib import Path
 
 import cv2
 import gradio as gr
+import numpy as np
 from ultralytics import YOLO
 
 HERE = Path(__file__).resolve().parent
@@ -28,6 +29,18 @@ _CANDIDATES = [
 ]
 
 _model: YOLO | None = None
+_device: str = "cpu"
+_use_half: bool = False
+_infer_lock = threading.Lock()
+_last_annotated: np.ndarray | None = None
+_last_coords: str = ""
+
+# Speed-first defaults (web path is slower than raw OpenCV desktop).
+INFER_IMGSZ = 320
+MAX_FRAME_SIDE = 480
+STREAM_EVERY_SEC = 0.05
+BOX_COLOR = (45, 212, 191)
+TEXT_COLOR = (248, 250, 252)
 
 MESSAGE_VISIBLE_SEC = 5.0
 
@@ -128,27 +141,92 @@ def resolve_model_path() -> Path:
 
 
 def load_model() -> YOLO:
-    global _model
+    global _model, _device, _use_half
     if _model is not None:
         return _model
+
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            _device = "0"
+            _use_half = True
+        else:
+            _device = "cpu"
+            _use_half = False
+            # Keep CPU inference responsive for webcam loop.
+            torch.set_num_threads(max(1, min(4, (os.cpu_count() or 2))))
+    except Exception:
+        _device = "cpu"
+        _use_half = False
+
+    cv2.setNumThreads(2)
     _model = YOLO(str(resolve_model_path()))
+    try:
+        _model.fuse()
+    except Exception:
+        pass
+
+    # Warm up so the first real frame is not the slowest.
+    warm = np.zeros((INFER_IMGSZ, INFER_IMGSZ, 3), dtype=np.uint8)
+    _model.predict(
+        source=warm,
+        imgsz=INFER_IMGSZ,
+        conf=0.25,
+        verbose=False,
+        device=_device,
+        half=_use_half,
+        max_det=5,
+    )
     return _model
 
 
-def format_coordinates(result) -> str:
-    boxes = result.boxes
+def shrink_frame(frame: np.ndarray) -> np.ndarray:
+    h, w = frame.shape[:2]
+    side = max(h, w)
+    if side <= MAX_FRAME_SIDE:
+        return frame
+    scale = MAX_FRAME_SIDE / float(side)
+    return cv2.resize(
+        frame,
+        (max(1, int(w * scale)), max(1, int(h * scale))),
+        interpolation=cv2.INTER_AREA,
+    )
+
+
+def draw_boxes_rgb(frame_rgb: np.ndarray, boxes) -> tuple[np.ndarray, str]:
+    """Lightweight draw (faster than Ultralytics result.plot())."""
+    out = frame_rgb
     lines: list[str] = []
-    for i, box in enumerate(boxes, start=1):
-        x1, y1, x2, y2 = (float(v) for v in box.xyxy[0].tolist())
-        cx = (x1 + x2) / 2.0
-        cy = (y1 + y2) / 2.0
-        confidence = float(box.conf[0]) * 100.0
+    if boxes is None or len(boxes) == 0:
+        return out, ""
+
+    # Copy once only when we need to draw.
+    out = frame_rgb.copy()
+    xyxy = boxes.xyxy.cpu().numpy()
+    confs = boxes.conf.cpu().numpy()
+    for i, (row, conf) in enumerate(zip(xyxy, confs), start=1):
+        x1, y1, x2, y2 = (int(v) for v in row)
+        cv2.rectangle(out, (x1, y1), (x2, y2), BOX_COLOR, 2)
+        cx = (x1 + x2) * 0.5
+        cy = (y1 + y2) * 0.5
+        label = f"{conf * 100:.0f}%"
+        cv2.putText(
+            out,
+            label,
+            (x1, max(16, y1 - 6)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.55,
+            TEXT_COLOR,
+            2,
+            cv2.LINE_AA,
+        )
         lines.append(
             f"#{i}  center ({cx:.0f}, {cy:.0f})  "
-            f"box ({x1:.0f}, {y1:.0f}) → ({x2:.0f}, {y2:.0f})  "
-            f"{confidence:.0f}%"
+            f"box ({x1}, {y1}) → ({x2}, {y2})  "
+            f"{conf * 100:.0f}%"
         )
-    return "\n".join(lines)
+    return out, "\n".join(lines)
 
 
 def status_html(message: str) -> str:
@@ -158,7 +236,9 @@ def status_html(message: str) -> str:
 
 
 def detect(frame, confidence: float, miss_since: float | None, running: bool):
-    """Draw boxes on the same live view. Camera stays on when shuttle is missing."""
+    """Fast path: shrink frame, small imgsz, drop backlog frames, light drawing."""
+    global _last_annotated, _last_coords
+
     if not running:
         return gr.update(), "", gr.update(), miss_since, gr.update()
 
@@ -171,35 +251,57 @@ def detect(frame, confidence: float, miss_since: float | None, running: bool):
             gr.update(active=True),
         )
 
-    try:
-        model = load_model()
-    except FileNotFoundError as exc:
-        return frame, "", status_html(str(exc)), None, gr.update(active=True)
-    except Exception:
-        return frame, "", status_html(MSG_MODEL_FAIL), None, gr.update(active=True)
+    # If previous inference is still running, keep last result (no queue pile-up).
+    if not _infer_lock.acquire(blocking=False):
+        if _last_annotated is not None:
+            return _last_annotated, _last_coords, gr.update(), miss_since, gr.update()
+        return gr.update(), "", gr.update(), miss_since, gr.update()
 
     try:
-        conf = min(0.9, max(0.15, float(confidence)))
-        result = model.predict(source=frame, conf=conf, imgsz=640, verbose=False)[0]
-        boxes = result.boxes
-        found = boxes is not None and len(boxes) > 0
-        annotated = cv2.cvtColor(result.plot(), cv2.COLOR_BGR2RGB)
-    except Exception:
-        return frame, "", status_html(MSG_DETECT_FAIL), None, gr.update(active=True)
+        try:
+            model = load_model()
+        except FileNotFoundError as exc:
+            return frame, "", status_html(str(exc)), None, gr.update(active=True)
+        except Exception:
+            return frame, "", status_html(MSG_MODEL_FAIL), None, gr.update(active=True)
 
-    if found:
-        return annotated, format_coordinates(result), "", None, gr.update()
+        try:
+            conf = min(0.9, max(0.15, float(confidence)))
+            small = shrink_frame(frame)
+            # Gradio webcam frames are RGB; Ultralytics accepts ndarray RGB/BGR.
+            result = model.predict(
+                source=small,
+                conf=conf,
+                imgsz=INFER_IMGSZ,
+                verbose=False,
+                device=_device,
+                half=_use_half,
+                max_det=5,
+                agnostic_nms=True,
+            )[0]
+            boxes = result.boxes
+            found = boxes is not None and len(boxes) > 0
+            annotated, coords = draw_boxes_rgb(small, boxes)
+            _last_annotated = annotated
+            _last_coords = coords if found else ""
+        except Exception:
+            return frame, "", status_html(MSG_DETECT_FAIL), None, gr.update(active=True)
 
-    if miss_since is None:
-        return (
-            annotated,
-            "",
-            status_html(MSG_NO_SHUTTLE),
-            time.time(),
-            gr.update(active=True),
-        )
+        if found:
+            return annotated, coords, "", None, gr.update()
 
-    return annotated, "", gr.update(), miss_since, gr.update()
+        if miss_since is None:
+            return (
+                annotated,
+                "",
+                status_html(MSG_NO_SHUTTLE),
+                time.time(),
+                gr.update(active=True),
+            )
+
+        return annotated, "", gr.update(), miss_since, gr.update()
+    finally:
+        _infer_lock.release()
 
 
 CUSTOM_CSS = """
@@ -507,6 +609,7 @@ def build_app() -> gr.Blocks:
                     show_download_button=False,
                     show_share_button=False,
                     show_fullscreen_button=False,
+                    format="jpeg",
                 )
                 # What the user sees: live annotated frames + moving coordinates.
                 stage = gr.Image(
@@ -518,6 +621,7 @@ def build_app() -> gr.Blocks:
                     show_download_button=False,
                     show_share_button=False,
                     show_fullscreen_button=False,
+                    format="jpeg",
                 )
 
             with gr.Row(elem_classes=["controls-row"]):
@@ -554,6 +658,9 @@ def build_app() -> gr.Blocks:
                 )
 
         def on_start():
+            global _last_annotated, _last_coords
+            _last_annotated = None
+            _last_coords = ""
             return (
                 True,
                 None,
@@ -567,6 +674,9 @@ def build_app() -> gr.Blocks:
             )
 
         def on_stop():
+            global _last_annotated, _last_coords
+            _last_annotated = None
+            _last_coords = ""
             return (
                 False,
                 None,
@@ -619,7 +729,7 @@ def build_app() -> gr.Blocks:
             inputs=[camera, confidence, miss_since, running],
             outputs=[stage, coords, status, miss_since, msg_timer],
             time_limit=None,
-            stream_every=0.15,
+            stream_every=STREAM_EVERY_SEC,
         )
 
         def clear_status():
@@ -631,7 +741,7 @@ def build_app() -> gr.Blocks:
 
 
 demo = build_app()
-demo.queue(max_size=2)
+demo.queue(max_size=1, default_concurrency_limit=1)
 
 
 def port_in_use(port: int, host: str = "127.0.0.1") -> bool:
