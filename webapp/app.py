@@ -346,6 +346,8 @@ def pick_port(preferred: int = 7860, fallbacks: int = 15) -> int:
 if __name__ == "__main__":
     port = pick_port(7860)
     url = f"http://127.0.0.1:{port}"
+    # Temporary public link (free): python webapp/app.py --share
+    share = ("--share" in sys.argv) or (os.environ.get("GRADIO_SHARE", "").strip() == "1")
 
     def open_when_ready() -> None:
         for _ in range(80):
@@ -360,4 +362,5 @@ if __name__ == "__main__":
         server_port=port,
         inbrowser=False,
         show_error=True,
+        share=share,
     )

@@ -1,79 +1,57 @@
-# Deploy live demo — Hugging Face Spaces
+# Hosting options (updated)
 
-## Important: do NOT use Gradio Lite / Static
+## Hugging Face message you see
 
-On **Create new Space** you may see templates under **Static** (including **Gradio Lite**).
+> Gradio and Docker Spaces require a paid plan  
+> Static Spaces stay free
 
-| Choice | Use for this project? |
-|--------|------------------------|
-| **Gradio** (Space SDK = Gradio, Python) | **YES** |
-| **Static → Gradio Lite** | **NO** — runs in browser only; YOLO/PyTorch will not work |
-| **Static → blank HTML** | **NO** |
+That means:
 
-You need the real **Gradio** SDK (server Python), not Gradio Lite.
+| Option on HF | For this shuttlecock app? |
+|--------------|---------------------------|
+| **Gradio** / **Docker** | Needs **HF PRO** (paid) |
+| **Static** / **Gradio Lite** | Free, but **cannot** run YOLO + webcam server |
 
----
-
-## Account
-
-1. Open **https://huggingface.co/join** and sign up  
-2. Confirm your email  
+So **do not** pick Static / Gradio Lite — the model will not work there.
 
 ---
 
-## Create the Space (correct clicks)
+## Free options that work
 
-1. Open **https://huggingface.co/new-space**
-2. **Space name:** `shuttlecock-detection`
-3. **Space SDK:** click **Gradio** (not Static)
-4. If it asks for hardware:
-   - Prefer **ZeroGPU** if shown (often the free Gradio option), or **CPU basic**
-5. **Public** → **Create Space**
+### 1) Local (best)
 
-If Gradio is locked / asks for PRO:
+Double-click:
 
-- Free accounts sometimes only get **Static** templates — Gradio Lite will **not** run this app  
-- Options then:
-  1. Use **local** `run.bat` (best reliability), or  
-  2. Hugging Face **PRO** for Gradio CPU, or  
-  3. Create Gradio Space with **ZeroGPU** if your account still allows it (up to 2 on free, when eligible)
+`run.bat`
+
+Browser opens on your PC. Camera works here.
+
+### 2) Temporary public link (free, PC must stay on)
+
+Double-click:
+
+`run-share.bat`
+
+Or:
+
+```bash
+python webapp/app.py --share
+```
+
+Gradio prints a link like `https://xxxxx.gradio.live` — share that.  
+It works only while your laptop is running the app.
+
+### 3) Permanent online on Hugging Face
+
+Subscribe to **Hugging Face PRO**, then create a **Gradio** Space (not Static) and upload the `webapp/` files.
 
 ---
 
-## Upload files
+## Upload list (only if you have Gradio Space / PRO)
 
-Space → **Files** → **Upload files**  
-Upload from your PC folder:
-
-`C:\Users\CodeTech\Desktop\ShuttleCock-Detection\webapp\`
-
-Required:
+From `webapp/`:
 
 - `app.py`
 - `requirements.txt`
 - `README.md`
-- `models/shuttle_yolov8n_best.pt` (keep the `models` folder name)
-
-First build often takes **5–15 minutes**.
-
-Live URL example:
-
-`https://huggingface.co/spaces/YOUR_USERNAME/shuttlecock-detection`
-
----
-
-## Quick check after deploy
-
-1. Status = **Running**  
-2. Open Space → **Allow** camera  
-3. Hold a shuttlecock in view  
-4. Hold a shuttlecock in view  
-5. If nothing is detected, **No detection of shuttle** shows for **5 seconds**, then clears — **camera stays on**
-
----
-
-## Local (always works, free)
-
-Double-click:
-
-`C:\Users\CodeTech\Desktop\ShuttleCock-Detection\run.bat`
+- `models/shuttle_yolov8n_best.pt`
