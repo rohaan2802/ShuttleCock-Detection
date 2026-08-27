@@ -11,23 +11,39 @@ license: mit
 short_description: Live webcam shuttlecock detection with coordinates
 ---
 
-# Shuttlecock live detector
+# Shuttlecock live detector (webapp)
 
-Point your webcam at a shuttlecock. The page draws a box and shows coordinates only.
+Point your webcam at a shuttlecock. One screen draws the box and shows **live coordinates**.
 
-No database. Nothing is saved.
+- No database  
+- Nothing saved to Excel/CSV from this UI  
+- **Access webcam** → live detect (no Record click)  
+- **Stop** → clear and return to idle  
 
-## Run locally
+## Full documentation
 
-**Windows:** double-click `run.bat` in the repo root (or `webapp\run.bat`).  
-The browser opens by itself. If port `7860` is busy, it is freed first.
+**Read the root README for everything** (all files, ports, install, deploy, troubleshooting):
+
+→ [`../README.md`](../README.md)  
+→ Hosting notes: [`../DEPLOY-HF.md`](../DEPLOY-HF.md)
+
+## Run locally (short)
+
+From **repo root**:
 
 ```bash
-python app.py
+python -m pip install -r webapp/requirements.txt
+python webapp/app.py
 ```
 
-From repo root: `python webapp/app.py`
+Or double-click `run.bat` in the repo root.
 
-## Deploy (Hugging Face Spaces)
+- Default URL: `http://127.0.0.1:7860`  
+- Port auto-freed / fallback if busy  
+- Browser opens automatically  
+- Public temp link: `python webapp/app.py --share` or `run-share.bat`
 
-See steps in the repo root `DEPLOY-HF.md`.
+## Model
+
+`models/shuttle_yolov8n_best.pt`  
+(fallback: `../ShuttleBotRealtime/models/shuttle_yolov8n_best.pt`)
