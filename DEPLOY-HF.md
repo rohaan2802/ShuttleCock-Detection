@@ -67,8 +67,8 @@ Live URL example:
 1. Status = **Running**  
 2. Open Space → **Allow** camera  
 3. Hold a shuttlecock in view  
-4. If nothing is detected for ~2 seconds, camera stops and **No detection of shuttle** shows for **5 seconds**, then clears  
-5. Click **Start camera again** to retry  
+4. Hold a shuttlecock in view  
+5. If nothing is detected, **No detection of shuttle** shows for **5 seconds**, then clears — **camera stays on**
 
 ---
 
