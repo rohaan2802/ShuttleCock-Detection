@@ -1,64 +1,79 @@
-# Deploy live demo — Hugging Face Spaces (free)
+# Deploy live demo — Hugging Face Spaces
 
-Best free host for this Gradio + YOLO webcam app.
+## Important: do NOT use Gradio Lite / Static
 
-Your live URL will look like:
+On **Create new Space** you may see templates under **Static** (including **Gradio Lite**).
+
+| Choice | Use for this project? |
+|--------|------------------------|
+| **Gradio** (Space SDK = Gradio, Python) | **YES** |
+| **Static → Gradio Lite** | **NO** — runs in browser only; YOLO/PyTorch will not work |
+| **Static → blank HTML** | **NO** |
+
+You need the real **Gradio** SDK (server Python), not Gradio Lite.
+
+---
+
+## Account
+
+1. Open **https://huggingface.co/join** and sign up  
+2. Confirm your email  
+
+---
+
+## Create the Space (correct clicks)
+
+1. Open **https://huggingface.co/new-space**
+2. **Space name:** `shuttlecock-detection`
+3. **Space SDK:** click **Gradio** (not Static)
+4. If it asks for hardware:
+   - Prefer **ZeroGPU** if shown (often the free Gradio option), or **CPU basic**
+5. **Public** → **Create Space**
+
+If Gradio is locked / asks for PRO:
+
+- Free accounts sometimes only get **Static** templates — Gradio Lite will **not** run this app  
+- Options then:
+  1. Use **local** `run.bat` (best reliability), or  
+  2. Hugging Face **PRO** for Gradio CPU, or  
+  3. Create Gradio Space with **ZeroGPU** if your account still allows it (up to 2 on free, when eligible)
+
+---
+
+## Upload files
+
+Space → **Files** → **Upload files**  
+Upload from your PC folder:
+
+`C:\Users\CodeTech\Desktop\ShuttleCock-Detection\webapp\`
+
+Required:
+
+- `app.py`
+- `requirements.txt`
+- `README.md`
+- `models/shuttle_yolov8n_best.pt` (keep the `models` folder name)
+
+First build often takes **5–15 minutes**.
+
+Live URL example:
 
 `https://huggingface.co/spaces/YOUR_USERNAME/shuttlecock-detection`
 
 ---
 
-## 1) Create account
+## Quick check after deploy
 
-1. Open **https://huggingface.co/join**
-2. Sign up (Google / email)
-3. Confirm email if asked
-
----
-
-## 2) Create a Space
-
-1. Open **https://huggingface.co/new-space**
-2. Fill:
-   - **Space name:** `shuttlecock-detection` (any name is fine)
-   - **License:** MIT
-   - **Select the SDK:** **Gradio**
-   - **Space hardware:** **CPU basic — free**
-   - **Visibility:** Public
-3. Click **Create Space**
+1. Status = **Running**  
+2. Open Space → **Allow** camera  
+3. Hold a shuttlecock in view  
+4. If nothing is detected for ~2 seconds, camera stops and **No detection of shuttle** shows for **5 seconds**, then clears  
+5. Click **Start camera again** to retry  
 
 ---
 
-## 3) Upload these 4 files
+## Local (always works, free)
 
-In the new Space → **Files** → **Add file** → **Upload files**  
-Upload **everything from the `webapp/` folder** (not the whole GitHub repo):
+Double-click:
 
-| File | Required |
-|------|----------|
-| `app.py` | yes |
-| `requirements.txt` | yes |
-| `README.md` | yes (has Space settings) |
-| `models/shuttle_yolov8n_best.pt` | yes |
-
-Keep the folder name `models` so the path stays `models/shuttle_yolov8n_best.pt`.
-
-After upload, Hugging Face builds the app (often **5–15 minutes** the first time). Status shows at the top of the Space page.
-
----
-
-## 4) Open the live page
-
-When status is **Running**, open your Space URL and click **Allow** for the camera.
-
----
-
-## Notes
-
-- Free CPU is slower than a local PC — a few frames per second is normal.
-- If the Space sleeps after idle time, open the URL again; it wakes in a minute or two.
-- Do **not** use Vercel for this app.
-
-Local files for upload are already in your clone:
-
-`C:\Users\CodeTech\Desktop\ShuttleCock-Detection\webapp\`
+`C:\Users\CodeTech\Desktop\ShuttleCock-Detection\run.bat`
