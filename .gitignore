@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv*/
+node_modules/
+.gradio/
+.test-output/
+*.onnx.data
+ShuttleBotRealtime/models/*.onnx

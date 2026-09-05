@@ -24,8 +24,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 
 _CANDIDATES = [
-    HERE / "models" / "shuttle_yolov8n_best.pt",
     ROOT / "ShuttleBotRealtime" / "models" / "shuttle_yolov8n_best.pt",
+    HERE / "models" / "shuttle_yolov8n_best.pt",  # Standalone legacy deployments.
 ]
 
 _model: YOLO | None = None

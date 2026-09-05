@@ -1,0 +1,4 @@
+-r requirements-desktop.txt
+onnx>=1.16.0
+onnxruntime>=1.18.0
+onnxscript>=0.3.0

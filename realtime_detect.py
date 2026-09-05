@@ -5,6 +5,7 @@ from pathlib import Path  # Path gives safe file/folder path handling across OSe
 
 import cv2  # cv2 (OpenCV) handles webcam capture and drawing text/graphics on frames.
 from ultralytics import YOLO  # YOLO class loads the trained model and runs detection.
+from model_config import MODEL_PATH
 
 
 def parse_args():  # parse_args() collects all user-configurable runtime settings.
@@ -12,7 +13,7 @@ def parse_args():  # parse_args() collects all user-configurable runtime setting
     parser.add_argument(  # Add --model argument so user can choose a custom .pt model file.
         "--model",  # --model is the CLI flag name.
         type=str,  # type=str means this argument must be a text path string.
-        default="ShuttleBotRealtime/models/shuttle_yolov8n_best.pt",  # Default model path used when --model is not provided.
+        default=str(MODEL_PATH),  # Canonical checkpoint, independent of working directory.
         help="Path to trained YOLO model (.pt)",  # Help text shown in --help output.
     )
     parser.add_argument(  # Add --camera-index argument to select webcam source index.
