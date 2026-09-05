@@ -1,0 +1,11 @@
+{
+  "source": "ShuttleBotRealtime/models/shuttle_yolov8n_best.pt",
+  "source_sha256": "a78ab9b34ff921ded57e421dc281e02ba94bb2042e003b91e34294f7ac62a88c",
+  "onnx_sha256": "f5d951fb360d0288c1e20bf968647605cb703d1e7e9cdf4a9e74acb3f336b292",
+  "image_size": 320,
+  "classes": {
+    "0": "shuttle"
+  },
+  "input": "RGB float32 NCHW / 255, letterbox padding 114",
+  "opset": 17
+}

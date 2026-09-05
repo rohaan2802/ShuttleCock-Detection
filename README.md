@@ -1,631 +1,156 @@
-# ShuttleCock Detection (ShuttleBot)
+# ShuttleBot — desktop robotics & free live web detection
 
-**YOLOv8n** shuttlecock detector for an autonomous badminton **service robot** (ShuttleBot).
+YOLOv8n shuttlecock detection for an autonomous badminton service robot.
 
-This repository includes:
+**Live web app:** https://rohaan2802.github.io/ShuttleCock-Detection/
 
-- Colab / notebook training pipeline
-- Trained weights (`shuttle_yolov8n_best.pt`)
-- Desktop real-time webcam detector with robot actions + CSV log
-- Simulation script
-- Robotics design / viva notes (Raspberry Pi + Arduino)
-- **Live Gradio web app** — browser webcam, boxes + coordinates only (no database, no Excel/CSV storage)
+**Author:** Mohammad Rohaan · **Student ID:** i222327 · [GitHub](https://github.com/rohaan2802)
 
-**Student ID:** i222327 · **Author:** Mohammad Rohaan · [rohaan2802](https://github.com/rohaan2802)
-**GitHub repo:** https://github.com/rohaan2802/ShuttleCock-Detection
+## Choose how to run
 
----
+| Mode | Start | Processing | Features |
+|---|---|---|---|
+| Public web app | [Open live detector](https://rohaan2802.github.io/ShuttleCock-Detection/) | Visitor's browser | Live camera, boxes, confidence, coordinates; no uploads or CSV |
+| Local web app | `python app.py web` or `run-web.bat` | Your browser | Same files and interface as the public website |
+| Desktop robotics | `python app.py desktop` or `run-desktop.bat` | Python / OpenCV | Camera, boxes, robot action suggestions, CSV logs |
+| Original Gradio app | `python app.py gradio` or existing `run.bat` | Local Python server | Original browser interface and detection |
+| Browser model export | `python app.py export` | Local Python | Rebuilds ONNX from the canonical trained checkpoint |
 
-## Table of contents
+`app.py` is the common launcher. The existing desktop and Gradio entry points still work directly. The Python application and JavaScript browser runtime use different execution formats of the **same trained model**, not separately trained models. GitHub Pages serves static files and cannot execute a Python `.py` file.
 
-1. [What this project does](#1-what-this-project-does)
-2. [What we built / updated (changelog)](#2-what-we-built--updated-changelog)
-3. [Quick start — which file should I run?](#3-quick-start--which-file-should-i-run)
-4. [Requirements](#4-requirements)
-5. [Repository layout (every important path)](#5-repository-layout-every-important-path)
-6. [Model weights](#6-model-weights)
-7. [Live web app (`webapp/`)](#7-live-web-app-webapp)
-8. [Ports, browser URL, and port conflicts](#8-ports-browser-url-and-port-conflicts)
-9. [Desktop real-time detector (`realtime_detect.py`)](#9-desktop-real-time-detector-realtime_detectpy)
-10. [Offline prediction (Python one-liner)](#10-offline-prediction-python-one-liner)
-11. [Training notebook (ML pipeline)](#11-training-notebook-ml-pipeline)
-12. [Training artifacts](#12-training-artifacts)
-13. [Simulation](#13-simulation)
-14. [Robotics context (Pi + Arduino)](#14-robotics-context-pi--arduino)
-15. [Dataset](#15-dataset)
-16. [Hosting / deploy (Hugging Face and free options)](#16-hosting--deploy-hugging-face-and-free-options)
-17. [Web app behaviour (UI rules)](#17-web-app-behaviour-ui-rules)
-18. [Speed / performance notes](#18-speed--performance-notes)
-19. [Troubleshooting](#19-troubleshooting)
-20. [Viva highlights](#20-viva-highlights)
-21. [Notes](#21-notes)
-22. [Author](#22-author)
+## Live camera demo
 
----
+1. Open the live app in a modern browser with WebAssembly support (current Chrome, Edge, Firefox or Safari).
+2. Choose rear/default or front camera, then click **Start camera** and allow access.
+3. The detector downloads once for the session, then processes frames on your device. The initial model/runtime download is approximately 24 MB.
+4. Hold a shuttlecock in good light. Boxes, confidence and the strongest match's center coordinates appear. Coordinates use the original camera image, with `(0, 0)` at its top-left.
+5. Click **Stop camera** to release the camera. Switching away from the tab also stops capture; restart on return.
 
-## 1) What this project does
+No account, payment card, paid inference API, Python installation or running owner laptop is needed for visitors. Camera frames are not uploaded or saved by this browser app. GitHub delivers the app/model files; Google Fonts supplies optional fonts. Device speed and lighting affect performance; fast motion, tiny targets and low-powered phones can reduce detection quality. This is a student demo, with no guaranteed FPS or service uptime.
 
-Detect a **shuttlecock** in camera frames so a court robot can steer and pick it up.
+## Local setup
 
-| Layer | Where it runs | Role |
-|-------|----------------|------|
-| Computer vision (YOLO) | PC / Raspberry Pi | Find shuttlecock + coordinates |
-| Motor / PID / encoders | Arduino | Real-time motion control |
-| This GitHub repo | Detection + ML + web demo | Soft side + design docs |
+Clone the repository and work from its root:
 
-Two ways to run detection on a PC:
-
-| Mode | Entry | Saves data? | Robot actions? |
-|------|--------|-------------|----------------|
-| **Desktop OpenCV** | `realtime_detect.py` | Yes → `detection_log.csv` | Yes (LEFT/RIGHT/PICK/…) |
-| **Browser web app** | `run.bat` / `webapp/app.py` | **No** DB / Excel / CSV | **No** — boxes + coordinates only |
-
----
-
-## 2) What we built / updated (changelog)
-
-Work added on top of the original ShuttleBot ML project:
-
-### Live Gradio web page (`webapp/`)
-
-- Live webcam detection in the browser
-- Shows **bounding box** + **live coordinates**
-- **No database**, no Excel, no CSV logging from the web UI
-- Dark interactive theme (Outfit + JetBrains Mono), responsive layout
-- Single-screen flow:
-  - **Access webcam** → auto-starts live detection (no manual Gradio “Record” click)
-  - **Stop** → camera off, detection cleared, idle screen returns
-- Status / error messages show for **5 seconds**, then clear
-- If shuttle is **not** found → camera **stays on**; message: `No detection of shuttle` (5s)
-- Port helper: prefers **7860**, frees it if busy, otherwise next free port; browser opens automatically
-- Speed optimizations for web path:
-  - Inference size **320**
-  - Max frame side **480px**
-  - Drop backlog frames (no queue pile-up)
-  - Lightweight OpenCV drawing (not heavy `result.plot()`)
-  - JPEG encode, small Gradio queue
-  - Model fuse + warmup
-
-### Helper launchers
-
-| File | Purpose |
-|------|---------|
-| `run.bat` | Local web app (auto browser) |
-| `run-share.bat` | Local web app + temporary public Gradio link |
-| `webapp/run.bat` | Same as local web app, from inside `webapp/` |
-| `DEPLOY-HF.md` | Hosting notes (HF PRO wall, Static/Lite warning, free options) |
-
-### Docs
-
-- Root `README.md` (this file) — full project + web app guide
-- `webapp/README.md` — Space frontmatter + short run notes
-- `DEPLOY-HF.md` — deploy / hosting reality check
-
----
-
-## 3) Quick start — which file should I run?
-
-| Goal | What to run | How |
-|------|-------------|-----|
-| **Browser live demo (recommended for UI)** | `run.bat` | Double-click in repo root |
-| Same, from terminal | `webapp/app.py` | `python webapp/app.py` |
-| Share a **temporary** public link | `run-share.bat` | Double-click (PC must stay on) |
-| Fastest desktop OpenCV loop + CSV + robot actions | `realtime_detect.py` | See [§9](#9-desktop-real-time-detector-realtime_detectpy) |
-| Train / retrain model | `i222327_ML_FINALPROJECT.ipynb` | Open in Colab / Jupyter |
-| Robot simulation | `Simulation.py` | `python Simulation.py` |
-| Deploy online permanently | HF **Gradio** Space (needs PRO) or keep local/`--share` | See [§16](#16-hosting--deploy-hugging-face-and-free-options) |
-
-### First-time setup (web app)
-
-Open PowerShell in the repo root:
-
-```powershell
-cd C:\Users\CodeTech\Desktop\ShuttleCock-Detection
-python -m pip install -r webapp\requirements.txt
+```bash
+git clone https://github.com/rohaan2802/ShuttleCock-Detection.git
+cd ShuttleCock-Detection
 ```
 
-Then either:
+**Browser app:** only Python's standard library is needed to serve the committed files:
 
-```powershell
-.\run.bat
+```bash
+python app.py web
 ```
 
-or:
+Open `http://localhost:8000`. For another port use `python app.py web --port 8080`; use `--no-browser` to suppress automatic browser opening. Use a local HTTP server instead of double-clicking `docs/index.html`, because model loading and camera permissions require an appropriate origin. Remote camera access requires HTTPS; localhost is supported for development.
 
-```powershell
-python webapp\app.py
+**Desktop robotics:** Python 3.11 or 3.12 is recommended. Use a virtual environment:
+
+```bash
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+python -m pip install -r requirements-desktop.txt
+python app.py desktop
 ```
 
-Browser should open to `http://127.0.0.1:7860` (or another free port — see [§8](#8-ports-browser-url-and-port-conflicts)).
+Press **q** to quit. Options are forwarded to the original detector:
 
-> On this machine `pip` alone may not be on PATH. Prefer `python -m pip …`.
-
-### First-time setup (desktop detector)
-
-```powershell
-cd C:\Users\CodeTech\Desktop\ShuttleCock-Detection
-python -m pip install ultralytics opencv-python
-python realtime_detect.py --conf 0.35 --x-thresh 40 --pick-area-thresh 0.08
+```bash
+python app.py desktop --camera-index 1 --conf 0.35 --imgsz 640
+python app.py desktop --log-csv logs/session.csv
 ```
 
----
+The desktop program displays `SEARCH`, `TURN_LEFT`, `TURN_RIGHT`, `FORWARD` or `PICK` based on target position and bounding-box area. These are suggested actions; this script does not send motor commands to an Arduino. Its CSV output includes coordinates, errors, confidence, action and FPS. Raspberry Pi deployment still needs compatible Python/OpenCV packages and a camera; Arduino/motor integration is separate.
 
-## 4) Requirements
+**Original Gradio app:** install its dependencies in a separate virtual environment if possible, since headless OpenCV packages can conflict with desktop OpenCV's GUI support:
 
-### Software
-
-| Item | Notes |
-|------|--------|
-| **Python** | 3.10–3.12 recommended; 3.14 may work but wheels can be newer/fragile |
-| **pip** | Use `python -m pip` |
-| **Webcam** | Built-in or USB; browser must allow camera for web app |
-| **OS** | Windows tested (`run.bat`); Linux/macOS: run `python webapp/app.py` |
-
-### Python packages
-
-**Web app** (`webapp/requirements.txt`):
-
-- `gradio` (UI)
-- `ultralytics` (YOLO)
-- `opencv-python-headless`
-- `numpy`
-- `torch` (CPU index URL in requirements for lighter install)
-
-**Desktop script:**
-
-- `ultralytics`
-- `opencv-python` (GUI window)
-
-### Hardware
-
-- CPU is enough for demo (few FPS on web is normal)
-- NVIDIA GPU optional (web app auto-uses CUDA if available)
-
----
-
-## 5) Repository layout (every important path)
-
-```text
-ShuttleCock-Detection/
-├── README.md                          ← Full documentation (this file)
-├── DEPLOY-HF.md                       ← Hosting / Hugging Face notes
-├── run.bat                            ← Start local web app + open browser
-├── run-share.bat                      ← Web app + temporary public Gradio URL
-│
-├── webapp/                            ← LIVE BROWSER DETECTOR
-│   ├── app.py                         ← Gradio app (main web entry)
-│   ├── requirements.txt               ← Web dependencies
-│   ├── README.md                      ← Short notes + HF Space YAML header
-│   ├── run.bat                        ← Launch from webapp folder
-│   └── models/
-│       └── shuttle_yolov8n_best.pt    ← Weights copy for web / HF upload
-│
-├── realtime_detect.py                 ← Desktop OpenCV detector + actions + CSV
-├── Simulation.py                      ← Robot simulation
-├── detection_log.csv                  ← Log from realtime_detect.py runs
-├── results.csv / args.yaml            ← Training metrics / hyperparameters
-│
-├── i222327_ML_FINALPROJECT.ipynb      ← Colab training notebook
-├── i222327_ML_FINALPROJECT.ipynb - Colab.pdf
-│
-├── ShuttleBotRealtime/
-│   └── models/
-│       └── shuttle_yolov8n_best.pt    ← Weights for desktop realtime script
-│
-├── My Drive/ShuttleBot/...            ← Training / predict artifacts (large)
-│
-├── ML A #01 (Viva Questions).txt
-├── Shuttle Bot Design Report.pdf
-├── Shuttle Bot ML Design.pdf
-├── Mechanical_Design_of_Service_Robot_for_Shuttlecock.pdf
-├── Object Detection Models Explained.pdf
-├── slides.pdf / assignment PDFs / demo video assets
-└── .gradio/                           ← Local Gradio cache (auto-created; safe to ignore)
+```bash
+python -m pip install -r webapp/requirements.txt
+python app.py gradio
 ```
 
-### File purpose cheat-sheet
+Existing `run.bat` and `run-share.bat` retain their original behavior. A Gradio share link is temporary and requires the host computer to stay running. The public GitHub Pages app is independent of that Python server.
 
-| File / folder | Purpose | Run? |
-|---------------|---------|------|
-| `webapp/app.py` | Browser live detection UI | Yes — primary web entry |
-| `run.bat` | Windows launcher for web app | Yes — easiest |
-| `run-share.bat` | Web app + `*.gradio.live` share link | Yes — temporary public demo |
-| `webapp/requirements.txt` | Install web stack | `python -m pip install -r …` |
-| `webapp/models/*.pt` | Model for web / Space upload | Used automatically |
-| `ShuttleBotRealtime/models/*.pt` | Model for desktop script | Used by `realtime_detect.py` |
-| `realtime_detect.py` | Fast desktop OpenCV + actions + CSV | Yes |
-| `Simulation.py` | Simulation | Yes |
-| `i222327_ML_FINALPROJECT.ipynb` | Train / evaluate | In Colab/Jupyter |
-| `DEPLOY-HF.md` | How (not) to host on HF | Read only |
-| Design / viva PDFs & txt | Course docs | Read only |
-| `detection_log.csv` | Output of desktop detector | Generated |
-| `.gradio/` | Gradio runtime cache | Do not commit / ignore |
+## One checkpoint, multiple runtimes
 
----
+The source of truth is:
 
-## 6) Model weights
+`ShuttleBotRealtime/models/shuttle_yolov8n_best.pt`
 
-Primary trained file:
+- Desktop uses this checkpoint by default, regardless of the shell's working directory.
+- Gradio prefers this same checkpoint, with its old `webapp/models/` copy retained as a fallback for standalone legacy deployments.
+- `docs/models/shuttle.onnx` is a generated browser copy, using fixed `[1, 3, 320, 320]` RGB input and raw `[1, 5, 2100]` single-class YOLOv8 output.
+- `docs/models/shuttle.json` records source/export hashes, classes and preprocessing settings.
+- Browser preprocessing uses letterboxing (padding 114), RGB values divided by 255, followed by confidence filtering and non-maximum suppression at IoU 0.5. Desktop defaults to 640px inference, so detections can differ from the 320px browser demo even though the weights are shared.
 
-`shuttle_yolov8n_best.pt` (YOLOv8n fine-tuned for shuttlecock)
+After updating/retraining the checkpoint:
 
-Present in:
-
-1. `webapp/models/shuttle_yolov8n_best.pt` — used by the web app first  
-2. `ShuttleBotRealtime/models/shuttle_yolov8n_best.pt` — used by `realtime_detect.py` / fallback for web  
-
-Web app search order (in `webapp/app.py`):
-
-1. `webapp/models/shuttle_yolov8n_best.pt`  
-2. `ShuttleBotRealtime/models/shuttle_yolov8n_best.pt`  
-
-Size is roughly **~6 MB** — fine for Git and for uploading to a Space (if you have Gradio hosting).
-
----
-
-## 7) Live web app (`webapp/`)
-
-### What it is
-
-A **Gradio** webpage that:
-
-1. Opens your webcam in the browser  
-2. Runs YOLO on frames  
-3. Draws boxes on **one live view**  
-4. Updates **coordinates** as the shuttle moves  
-5. Does **not** store anything (no DB, Excel, CSV)
-
-### How to run (Windows)
-
-**Option A — double-click (easiest)**
-
-1. Open folder: `ShuttleCock-Detection`  
-2. Double-click `run.bat`  
-3. Wait for browser  
-4. Click **Access webcam**  
-5. Allow camera permission if the browser asks  
-6. Hold a shuttlecock in view  
-7. Click **Stop** when finished  
-
-**Option B — terminal**
-
-```powershell
-cd C:\Users\CodeTech\Desktop\ShuttleCock-Detection
-python -m pip install -r webapp\requirements.txt
-python webapp\app.py
+```bash
+python -m pip install -r requirements-export.txt
+python app.py export
+python tests/verify_export.py
 ```
 
-**Option C — from `webapp/` folder**
+Commit both the new ONNX file and JSON metadata with the checkpoint update. Do not edit generated ONNX files by hand. Training notebooks, result images, simulation scripts and robotics reports remain in the repository.
 
-```powershell
-cd C:\Users\CodeTech\Desktop\ShuttleCock-Detection\webapp
-.\run.bat
+## Browser development and verification
+
+The website is plain HTML/CSS/JavaScript, with ONNX Runtime Web **1.22.0** vendored under `docs/vendor/`. No cloud inference service or frontend build server is required.
+
+```bash
+npm ci --ignore-scripts
+npm run vendor
+npm test
+python tests/verify_export.py
+node tests/verify_wasm.mjs
 ```
 
-**Option D — temporary public link**
+The tests cover RGB tensor layout, letterboxing, coordinate recovery, confidence filtering, overlap suppression and malformed output. The Python verification compares exported predictions against the checkpoint on three repository sample images. The WASM check compares browser-runtime predictions against the Python ONNX reference and requires a real detection. Sample outputs stay in ignored `.test-output/`; these samples are existing repository images, not camera captures.
 
-```powershell
-cd C:\Users\CodeTech\Desktop\ShuttleCock-Detection
-.\run-share.bat
+## GitHub Pages deployment & future updates
+
+The Pages source is **main → /docs**. The live URL is:
+
+**https://rohaan2802.github.io/ShuttleCock-Detection/**
+
+In repository **Settings → Pages**, choose **Deploy from a branch**, branch **main**, folder **/docs**, and save. GitHub republishes the website after pushes to the publishing source. Check **Actions → pages build and deployment** for completion. Public GitHub Pages hosting on GitHub Free requires no paid compute service or payment card.
+
+The repository remote should remain:
+
+```bash
+git remote -v
+# origin https://github.com/rohaan2802/ShuttleCock-Detection.git
 ```
 
-Or:
-
-```powershell
-python webapp\app.py --share
-```
-
-Terminal prints a URL like `https://xxxxxxxx.gradio.live`.  
-Anyone can open it **only while your PC keeps the app running**.
-
-### Environment flag (optional)
-
-```powershell
-$env:GRADIO_SHARE="1"
-python webapp\app.py
-```
-
-### Web UI controls
-
-| Control | Meaning |
-|---------|---------|
-| **Access webcam** | Start camera + auto live detection |
-| **Stop** | Stop camera, clear detection view, back to idle |
-| **Live coordinates** | Updates when shuttle is detected |
-| **Detection sensitivity** | Confidence threshold slider (lower = more detections) |
-
-### Web dependencies install (detail)
-
-```powershell
-python -m pip install -r webapp\requirements.txt
-```
-
-`requirements.txt` pins a CPU PyTorch index for smaller installs on machines without GPU.
-
----
-
-## 8) Ports, browser URL, and port conflicts
-
-### Default
-
-| Item | Value |
-|------|--------|
-| Preferred port | **7860** |
-| Local URL | `http://127.0.0.1:7860` |
-| Bind address | `127.0.0.1` (this PC only) |
-
-### Automatic port behaviour (`webapp/app.py`)
-
-On start the app will:
-
-1. Prefer port **7860**  
-2. If something is already listening on 7860 → **kill that listener** (Windows `taskkill` / Unix `SIGTERM`)  
-3. If 7860 still cannot be used → try **7861, 7862, …**  
-4. Last resort → OS ephemeral free port  
-5. Open the system browser to the chosen URL automatically  
-
-So you should **not** get stuck on “Address already in use” for normal local runs.
-
-### If the page does not open
-
-Manually visit:
-
-- `http://127.0.0.1:7860`  
-- or check the terminal for the printed Gradio local URL  
-
-### Stop the server
-
-- Close the terminal window running the app, or press `Ctrl+C` in that terminal  
-- Or click **Stop** in the UI (stops camera; close terminal to stop the server fully)
-
-### Firewall
-
-Local `127.0.0.1` usually needs no firewall change.  
-`--share` / Gradio tunnel needs outbound internet.
-
----
-
-## 9) Desktop real-time detector (`realtime_detect.py`)
-
-OpenCV window on the desktop (usually **faster** than the browser path).
-
-### Features
-
-- YOLO on webcam frames  
-- Chooses robot-style **actions** from bbox vs frame center  
-- Overlay text + FPS  
-- Writes **`detection_log.csv`**
-
-### Run
-
-```powershell
-cd C:\Users\CodeTech\Desktop\ShuttleCock-Detection
-python -m pip install ultralytics opencv-python
-python realtime_detect.py --conf 0.35 --x-thresh 40 --pick-area-thresh 0.08
-```
-
-### CLI flags
-
-| Flag | Default | Meaning |
-|------|---------|---------|
-| `--model` | `ShuttleBotRealtime/models/shuttle_yolov8n_best.pt` | Weights path |
-| `--camera-index` | `0` | OpenCV camera index |
-| `--conf` | `0.35` | Confidence threshold |
-| `--iou` | `0.5` | NMS IoU |
-| `--imgsz` | `640` | Inference size |
-| `--x-thresh` | `40` | Pixels from center → LEFT/RIGHT |
-| `--pick-area-thresh` | `0.08` | Normalized box area → **PICK** |
-| `--log-csv` | `detection_log.csv` | Per-frame log file |
-
-Typical actions: **LEFT / RIGHT / FORWARD / PICK / SEARCH** (see draw/log loop in the script).  
-Quit with the OpenCV key used in `main()` (usually `q`).
-
----
-
-## 10) Offline prediction (Python one-liner)
-
-```python
-from ultralytics import YOLO
-
-model = YOLO("ShuttleBotRealtime/models/shuttle_yolov8n_best.pt")
-model.predict(source="path/to/images_or_video", conf=0.25, save=True)
-```
-
-Annotated outputs are written under Ultralytics `runs/predict/…`.
-
----
-
-## 11) Training notebook (ML pipeline)
-
-File: `i222327_ML_FINALPROJECT.ipynb` (Colab + Google Drive workflow)
-
-1. Install Ultralytics + OpenCV; check GPU  
-2. Mount Drive; unzip merged YOLO dataset  
-3. Inspect train/val/test; write dataset YAML  
-4. Fine-tune from `yolov8n.pt`  
-5. Copy `best.pt` → `shuttle_yolov8n_best.pt`  
-6. Predict on test images; log metrics  
-7. Plot box/cls/dfl loss, precision, recall, mAP50, mAP50-95  
-
-For local retrain: open the notebook and retarget Drive paths.
-
-PDF export also present: `i222327_ML_FINALPROJECT.ipynb - Colab.pdf`
-
----
-
-## 12) Training artifacts
-
-| Path | Contents |
-|------|----------|
-| `My Drive/ShuttleBot/runs/shuttle_train_v1/` | `args.yaml`, `results.csv`, `weights/best.pt` |
-| `My Drive/ShuttleBot/models/shuttle_yolov8n_best.pt` | Frozen export (Drive layout) |
-| `ShuttleBotRealtime/models/shuttle_yolov8n_best.pt` | Copy for realtime / desktop |
-| `webapp/models/shuttle_yolov8n_best.pt` | Copy for web app |
-| `runs/predict_test_v1/` (under Drive tree) | Annotated test JPGs (large) |
-
-`results.csv` — epoch-wise train/val losses + P, R, mAP50, mAP50-95  
-`args.yaml` — Ultralytics hyperparameters from the training run  
-
-Root copies of `results.csv` / `args.yaml` may also exist for quick reference.
-
----
-
-## 13) Simulation
-
-`Simulation.py` — kinematics / collection simulation assets for the robot (pair with design PDFs).
-
-```powershell
-python Simulation.py
-```
-
-Check the file’s `if __name__ == "__main__"` block for windows / parameters.  
-Related media: `Simulation_video.avi`, demo MP4 in the repo root.
-
----
-
-## 14) Robotics context (Pi + Arduino)
-
-From `ML A #01 (Viva Questions).txt` and design PDFs:
-
-| Topic | Design choice |
-|-------|----------------|
-| Why Pi + Arduino | Pi for ML/camera; Arduino for **real-time PID** + encoders |
-| Why PID | Straighter motion, less motor drift |
-| Why not Jetson | Cost / power for academic build |
-| Grounding | Common GND between Pi and Arduino |
-| Drop zone | Encoders and/or visual markers |
-| Claimed detection | ~85–90% indoor with lighting control |
-| Future | SLAM, AI accelerator, dock, multi-shuttle |
-
-PDFs: Shuttle Bot design/ML reports, mechanical design, assignment briefs, object-detection notes, slides.
-
----
-
-## 15) Dataset
-
-Note file: `My_Drive_ShuttleBot_datasets_DataSet_Link.txt`  
-Kaggle source referenced in project notes: [shuttle-badminton-photos](https://www.kaggle.com/datasets/ayushsinha731/shuttle-badminton-photos) plus a merged YOLO-format ZIP used in Colab.
-
----
-
-## 16) Hosting / deploy (free options)
-
-### Recommended: Lightning AI Studio (sleep + auto-wake)
-
-If you want a **public link** that can **sleep when idle** and **start again when someone opens the URL** (PC can be off):
-
-→ Full guide: [`DEPLOY-LIGHTNING.md`](DEPLOY-LIGHTNING.md)
-
-Cloud start helper: `scripts/start-webapp-cloud.sh`
-
-### Gradio share (easy, laptop must stay on)
-
-```bat
-run-share.bat
-```
-
-or `python webapp/app.py --share` → temporary `*.gradio.live` link (~72h).  
-**No** cloud auto-wake — your PC must stay powered on.
-
-### Google Colab + share/ngrok
-
-Temporary only. When the runtime dies, the link does **not** auto-restart on click. Use for short tests, not a stable demo.
-
-### Hugging Face Gradio Space
-
-Often needs **PRO** on new accounts. Static / Gradio Lite will **not** run YOLO. Details: [`DEPLOY-HF.md`](DEPLOY-HF.md)
-
-### Why not Vercel / Netlify / Render (this guide)
-
-- Vercel/Netlify: no long-running PyTorch process  
-- Render: you asked to skip it  
-
----
-
-## 17) Web app behaviour (UI rules)
-
-| Situation | Behaviour |
-|-----------|-----------|
-| Click **Access webcam** | Camera starts; live detection starts automatically (internal Gradio Record is auto-clicked and hidden) |
-| Shuttle visible | Box drawn; **coordinates update live** as it moves |
-| Shuttle not visible | Camera **stays on**; `No detection of shuttle` for **5 seconds**, then message clears |
-| Errors / waiting messages | Shown for **5 seconds**, then disappear |
-| Click **Stop** | Camera stopped; detection image cleared; idle screen returns |
-| Storage | Nothing saved (no DB / Excel / CSV from web UI) |
-
----
-
-## 18) Speed / performance notes
-
-### Desktop (`realtime_detect.py`)
-
-- Direct OpenCV loop — usually **fastest** on the same PC  
-- Default `imgsz=640`
-
-### Web (`webapp/app.py`)
-
-Browser path is inherently heavier (encode frames, send to Python, return JPEG). Optimizations already in code:
-
-| Setting | Value | Why |
-|---------|-------|-----|
-| `INFER_IMGSZ` | `320` | Faster YOLO |
-| `MAX_FRAME_SIDE` | `480` | Smaller images over the wire |
-| `STREAM_EVERY_SEC` | `0.05` | Snappier stream attempts |
-| Frame drop lock | on | Skip backlog instead of lagging |
-| Drawing | light OpenCV boxes | Avoid slow `result.plot()` |
-| Queue | `max_size=1` | No piled-up frames |
-| Warmup + `fuse()` | on | First real frames faster |
-
-Expect: web ≤ desktop FPS. Good indoor light helps both.
-
----
-
-## 19) Troubleshooting
-
-| Problem | Fix |
-|---------|-----|
-| `pip` not recognized | Use `python -m pip install …` |
-| Browser blank / no camera | Allow camera permission for `127.0.0.1` |
-| Port busy | App auto-frees **7860**; or close old `python webapp\app.py` / `run.bat` |
-| Very slow web FPS | Normal vs desktop; use `realtime_detect.py` for max speed; ensure only one app instance |
-| Model missing error | Ensure `webapp/models/shuttle_yolov8n_best.pt` or `ShuttleBotRealtime/models/…` exists |
-| HF only shows Static / Gradio Lite | Cannot host this app there for free; use local or `--share` or HF PRO Gradio |
-| Share link dead | Your PC stopped the app or lost internet |
-| Python 3.14 package errors | Install Python 3.11/3.12 and recreate venv if needed |
-| Old UI still showing | Stop old server (`Ctrl+C`) and run `run.bat` again |
-
-### Manual free port 7860 (Windows PowerShell)
-
-Usually not needed (app does this), but:
-
-```powershell
-Get-NetTCPConnection -LocalPort 7860 -ErrorAction SilentlyContinue |
-  Select-Object -ExpandProperty OwningProcess -Unique |
-  ForEach-Object { taskkill /F /PID $_ }
-```
-
----
-
-## 20) Viva highlights
-
-- Hybrid SBC + MCU: compute vs hard real-time  
-- PID + encoders vs open-loop motors  
-- Lighting and dataset quality dominate mAP  
-- Common ground and regulated 5 V / 12 V rails  
-- Web demo is for visualization/coordinates only — robot actions live in `realtime_detect.py` / Pi stack  
-- Do not clone huge `predict_test_v1` JPGs if you only need weights  
-
----
-
-## 21) Notes
-
-- Notebook paths assume Colab Drive. For a lean clone keep the `.pt` weights under `ShuttleBotRealtime/models/` and `webapp/models/`.  
-- Web UI intentionally does **not** log to CSV (desktop script does).  
-- Gradio “Record” is an internal stream switch; the web app auto-triggers it so users only use **Access webcam** / **Stop**.  
-
----
-
-## 22) Author
-
-**Mohammad Rohaan** — i222327 · [rohaan2802](https://github.com/rohaan2802)
-Repository: https://github.com/rohaan2802/ShuttleCock-Detection
+Keep README changes together with the code they describe. Review the diff, run the relevant checks, commit intended files, and push to `origin main`. Changes become online after the Pages deployment completes; files do not synchronize merely by being saved locally. Repository maintenance preferences are recorded in `AGENTS.md` for future coding sessions. Never commit credentials or force-push shared history.
+
+## Repository map
+
+| Path | Purpose |
+|---|---|
+| `app.py` | Common launcher for web, desktop, Gradio and export |
+| `model_config.py` | Canonical checkpoint and export paths |
+| `docs/` | Public static web app, ONNX model and runtime |
+| `realtime_detect.py` | Original desktop robotics detector |
+| `webapp/` | Original Gradio app and standalone deployment files |
+| `scripts/export_browser_model.py` | Reproducible browser model export |
+| `tests/` | Decoder and actual model verification |
+| `Simulation.py` | Existing robot simulation |
+| `i222327_ML_FINALPROJECT.ipynb` | Existing training notebook |
+| `My Drive/ShuttleBot/` | Existing training and prediction artifacts |
+| `LEGACY-GUIDE.md` | Historical desktop/Gradio guide and project background |
+
+Older `DEPLOY*.md`, `render.yaml` and Docker configuration describe optional legacy Python hosting. **This README is the current guide for the free GitHub Pages deployment.** The model and Ultralytics dependencies retain their applicable original licensing; ONNX Runtime's license is included in `docs/vendor/LICENSE`.
+
+## Troubleshooting
+
+- **Camera blocked:** allow camera access in browser site settings, close other camera applications, then restart.
+- **Blank model / load error:** allow the initial model download to finish and refresh. The site must include both `docs/models/` and `docs/vendor/`.
+- **No detections:** improve lighting, bring the shuttle closer or lower the threshold. A clear view of the shuttle matters more than screen brightness.
+- **Slow browser:** close other tabs and use a faster device. Frames are processed sequentially so inference does not build a backlog.
+- **Desktop window fails:** use GUI-enabled `opencv-python` in a clean desktop virtual environment.
+- **Old website after a push:** wait for the Pages deployment to succeed, then refresh the browser.
+
+References: [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages) · [Ultralytics export](https://docs.ultralytics.com/modes/export/) · [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/)
