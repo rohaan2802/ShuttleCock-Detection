@@ -1,34 +1,34 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Live shuttlecock detection, directly on your device. A ShuttleBot student robotics project.">
-  <meta name="theme-color" content="#10251f">
-  <title>ShuttleBot · Live detector</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2310251f'/%3E%3Ctext x='6' y='25' fill='%23d2f59a' font-size='27'%3E↗%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <header><a class="brand" href="./"><span class="brand-icon">↗</span> ShuttleBot<span class="badge">VISION LAB</span></a><a class="source" href="https://github.com/rohaan2802/ShuttleCock-Detection">Project & guide ↗</a></header>
-  <main>
-    <div class="intro"><div><p class="eyebrow">BADMINTON ROBOTICS / LIVE VISION</p><h1>A little shuttle.<br>A clear target.</h1><p class="subtitle">Find shuttlecocks with your camera. See their position in real time.</p></div><div class="privacy"><span>●</span> Runs on your device<br><small>Camera frames stay in your browser.</small></div></div>
-    <section class="workspace" aria-label="Live detector">
-      <div class="camera-panel">
-        <div class="panel-top"><span><i id="indicator"></i> CAMERA FEED</span><span id="resolution">OFFLINE</span></div>
-        <div class="stage"><video id="video" autoplay playsinline muted hidden></video><canvas id="view" hidden aria-label="Camera image with shuttlecock detection boxes"></canvas><div id="empty"><div class="target-icon">⌖</div><h2>Your court, in focus.</h2><p>Start the camera and hold a shuttlecock in view.<br>Good lighting helps the detector see it clearly.</p></div></div>
-        <div class="camera-footer"><span id="status" role="status" aria-live="polite">Ready when you are.</span><span class="local-label">ON-DEVICE DETECTION</span></div>
-      </div>
-      <aside>
-        <p class="eyebrow">SESSION CONTROLS</p><h2>Let’s find your shuttle.</h2><p class="hint">Allow camera access when your browser asks.</p>
-        <label for="camera">Camera</label><select id="camera"><option value="environment">Rear / default camera</option><option value="user">Front camera</option></select>
-        <button id="start" class="primary">Start camera <span>↗</span></button><button id="stop" disabled>Stop camera</button>
-        <div class="sensitivity"><label for="confidence">Confidence threshold <output id="confidence-value">35%</output></label><input id="confidence" type="range" min="10" max="90" value="35"><p class="hint">Raise this to show only stronger matches.</p></div>
-        <div class="readings"><div><span>Shuttlecocks</span><strong id="count">—</strong></div><div><span>Detection speed</span><strong id="fps">— <small>FPS</small></strong></div></div>
-        <div class="target-reading"><span>TARGET POSITION · PIXELS</span><strong id="coordinates">X — <em>/</em> Y —</strong><small id="match">Highest-confidence match</small></div>
-      </aside>
-    </section>
-    <footer><span>Built for ShuttleBot · Mohammad Rohaan · i222327</span><span>No uploads. No account. Just your camera.</span></footer>
-  </main>
-  <script src="vendor/ort.min.js"></script><script type="module" src="app.js"></script>
-</body>
-</html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ShuttleBot live shuttlecock detector. Private, on-device camera detection for badminton robotics.">
+<meta name="theme-color" content="#090d14"><title>ShuttleBot · Vision studio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090d14'/%3E%3Cpath d='M9 23L23 9M10 9h13v13' stroke='%235eead4' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css"></head><body>
+<svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+<symbol id="i-camera" viewBox="0 0 24 24"><path d="M8 5l2-2h4l2 2h4v15H4V5z"/><circle cx="12" cy="12" r="4"/></symbol>
+<symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 19L19 5M5 5h14v14"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4-4 7-8 9-4-2-8-5-8-9V6zM8 12l3 3 5-6"/></symbol>
+</defs></svg>
+<header class="topbar"><a class="brand" href="./"><span class="brand-icon"><svg><use href="#i-arrow"/></svg></span>ShuttleBot<span class="badge">VISION STUDIO</span></a><div class="header-right"><span class="private-pill"><i></i> On-device AI</span><a class="source" href="https://github.com/rohaan2802/ShuttleCock-Detection">Project guide <svg><use href="#i-arrow"/></svg></a></div></header>
+<main>
+<section class="intro"><div><p class="eyebrow"><span></span> SHUTTLECOCK DETECTION</p><h1>See the game.<span> Find the target.</span></h1><p class="subtitle">Your camera. Your court. Real-time vision, right in your browser.</p></div><div class="privacy"><svg><use href="#i-shield"/></svg><div>Private by design<small>Your camera feed never leaves this device.</small></div></div></section>
+<section class="workspace" aria-label="Live detector">
+<div class="camera-panel" id="camera-panel">
+<div class="panel-top"><div class="feed-title"><i id="indicator"></i><span>Live view</span><span id="mode-badge" class="mode-badge">STANDBY</span></div><div class="feed-tools"><span id="resolution">CAMERA OFF</span><button id="fullscreen" class="icon-button" title="Fullscreen view" aria-label="Fullscreen view"><svg><use href="#i-expand"/></svg></button></div></div>
+<div class="stage" id="stage"><video id="video" autoplay playsinline muted hidden></video><canvas id="view" hidden aria-label="Camera image with shuttlecock detection boxes"></canvas><div id="grid-overlay" hidden aria-hidden="true"></div><div id="paused-overlay" hidden><span>DETECTION PAUSED</span><small>Resume to continue tracking</small></div><div id="empty"><div class="scope"><span></span><svg><use href="#i-camera"/></svg></div><h2>Your next target starts here.</h2><p>Point your camera at a shuttlecock.<br>We’ll take care of the coordinates.</p><div class="empty-tags"><span>Live bounding boxes</span><span>Instant coordinates</span></div></div></div>
+<div class="camera-footer"><span class="status-wrap"><i id="status-dot"></i><span id="status" role="status" aria-live="polite">Ready when you are.</span></span><span class="local-label">LOCAL PROCESSING <svg><use href="#i-shield"/></svg></span></div>
+</div>
+<aside>
+<div class="section-heading"><h2>Control room</h2><span>01 / LIVE</span></div>
+<label for="camera">Camera source</label><select id="camera"><option value="environment">Rear / default camera</option><option value="user">Front camera</option></select>
+<button id="start" class="primary"><svg><use href="#i-camera"/></svg> Start camera <kbd>SPACE</kbd></button><div class="button-row"><button id="pause" disabled aria-pressed="false">Pause detection</button><button id="stop" disabled><span class="stop-square"></span> Stop camera</button></div>
+<div class="sensitivity"><label for="confidence">Confidence threshold <output id="confidence-value">35%</output></label><input id="confidence" type="range" min="10" max="90" value="35"><div class="range-labels"><span>More matches</span><span>Stronger matches</span></div></div>
+<div class="view-options"><label class="toggle"><span>Center guides<small>Line up your target</small></span><input id="grid" type="checkbox"><span class="switch" aria-hidden="true"></span></label><label class="toggle"><span>Mirror preview<small>Coordinates stay camera-relative</small></span><input id="mirror" type="checkbox"><span class="switch" aria-hidden="true"></span></label></div>
+<div class="target-card"><div class="target-header"><span>TARGET POSITION</span><span id="target-state">NO TARGET</span></div><div class="target-content"><div><strong id="coordinates">X — <em>/</em> Y —</strong><small id="match">Highest-confidence match</small></div><div class="position-map" aria-label="Target position in camera frame"><div id="target-dot" hidden></div></div></div><div class="confidence-track"><span id="confidence-bar"></span></div></div>
+<details class="tips"><summary>Tips for a better detection <span>+</span></summary><p>Use even lighting and keep the shuttlecock clearly in view. Lower the threshold for small targets; raise it to reduce false matches.</p><p><kbd>Space</kbd> start / stop · <kbd>P</kbd> pause / resume · <kbd>F</kbd> fullscreen. Shortcuts are inactive while editing controls.</p></details>
+</aside></section>
+<section class="metrics" aria-label="Session statistics"><article><div class="metric-top"><span>IN FRAME</span><span class="metric-icon">◎</span></div><strong id="count">—</strong><small>Shuttlecocks detected</small></article><article><div class="metric-top"><span>DETECTION SPEED</span><span class="metric-icon">ϟ</span></div><strong id="fps">— FPS</strong><small>Live processing rate</small></article><article><div class="metric-top"><span>FRAMES ANALYZED</span><span class="metric-icon">▥</span></div><strong id="frames">0</strong><small>This camera session</small></article><article><div class="metric-top"><span>SESSION TIME</span><span class="metric-icon">◷</span></div><strong id="elapsed">00:00</strong><small id="session-note">Waiting to start</small></article></section>
+<footer><span><span class="footer-dot"></span> Built for ShuttleBot <span class="footer-divider">/</span> Mohammad Rohaan · i222327</span><span>Free to use. Made to explore.</span></footer>
+</main><script src="vendor/ort.min.js"></script><script type="module" src="app.js"></script></body></html>

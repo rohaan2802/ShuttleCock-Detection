@@ -20,6 +20,16 @@ YOLOv8n shuttlecock detection for an autonomous badminton service robot.
 
 ## Live camera demo
 
+The browser app now has a dark **Vision Studio** interface with responsive controls and teal/violet highlights.
+
+- **Pause / resume detection:** freezes analysis and the displayed frame while keeping the camera on. Use **Stop camera** to release the camera completely.
+- **Fullscreen view:** expands the camera panel; use its button or Escape to return. Browsers without native fullscreen use an expanded in-page view.
+- **Center guides and mirror preview:** align the subject or use a familiar selfie view. Mirroring changes the preview only; reported coordinates and the target map stay relative to the original camera image, and labels remain readable.
+- **Camera source selection:** available device names appear after camera permission is granted. Stop the session before choosing another camera.
+- **Live telemetry:** shuttle count, smoothed processing FPS, analyzed frames, session duration, target position map and confidence bar. Frame count and elapsed time remain visible after Stop and reset when a new session starts. Session duration includes paused time.
+- **Saved preferences:** confidence, center guides and mirror settings are stored locally in your browser. Camera frames and device IDs are never persisted by these preferences.
+- **Keyboard controls:** Space starts/stops, P pauses/resumes and F expands the view. Shortcuts do not run while typing or interacting with form controls.
+
 1. Open the live app in a modern browser with WebAssembly support (current Chrome, Edge, Firefox or Safari).
 2. Choose rear/default or front camera, then click **Start camera** and allow access.
 3. The detector downloads once for the session, then processes frames on your device. The initial model/runtime download is approximately 24 MB.
