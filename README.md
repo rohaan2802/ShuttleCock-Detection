@@ -1,5 +1,15 @@
 # ShuttleBot — Desktop Robotics & Free Live Web Detection
 
+## Project screenshots
+
+The responsive Vision Studio browser detector is shown below at desktop and mobile widths. The capture includes the live-view state, camera controls, confidence threshold, target position telemetry, and session metrics.
+
+![ShuttleBot Vision Studio desktop and mobile preview](docs/screenshots/preview.webp)
+
+Individual captures: [desktop](docs/screenshots/desktop.webp) · [mobile](docs/screenshots/mobile.webp)
+
+The browser preview is a real static UI capture from `docs/index.html`; camera access is intentionally idle in documentation screenshots so no device permission or private video frame is recorded.
+
 YOLOv8n shuttlecock detection for an autonomous badminton service robot.
 
 ## 🚀 Live Demo
