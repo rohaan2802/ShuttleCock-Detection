@@ -4,7 +4,7 @@
 <meta name="description" content="ShuttleBot live shuttlecock detector. Private, on-device camera detection for badminton robotics.">
 <meta name="theme-color" content="#090d14"><title>ShuttleBot · Vision studio</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090d14'/%3E%3Cpath d='M9 23L23 9M10 9h13v13' stroke='%235eead4' stroke-width='3' fill='none'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css"></head><body>
+<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="enhancements.css"></head><body>
 <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
 <symbol id="i-camera" viewBox="0 0 24 24"><path d="M8 5l2-2h4l2 2h4v15H4V5z"/><circle cx="12" cy="12" r="4"/></symbol>
 <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></symbol>
@@ -23,7 +23,7 @@
 <aside>
 <div class="section-heading"><h2>Control room</h2><span>01 / LIVE</span></div>
 <label for="camera">Camera source</label><select id="camera"><option value="environment">Rear / default camera</option><option value="user">Front camera</option></select>
-<button id="start" class="primary"><svg><use href="#i-camera"/></svg> Start camera <kbd>SPACE</kbd></button><div class="button-row"><button id="pause" disabled aria-pressed="false">Pause detection</button><button id="stop" disabled><span class="stop-square"></span> Stop camera</button></div>
+<button id="start" class="primary"><svg><use href="#i-camera"/></svg> Start camera <kbd>SPACE</kbd></button><div class="button-row"><button id="pause" disabled aria-pressed="false">Pause detection</button><button id="stop" disabled><span class="stop-square"></span> Stop camera</button></div><div class="utility-row"><button id="snapshot" disabled>↘ Save snapshot</button><button id="reset">↺ Reset session</button></div>
 <div class="sensitivity"><label for="confidence">Confidence threshold <output id="confidence-value">35%</output></label><input id="confidence" type="range" min="10" max="90" value="35"><div class="range-labels"><span>More matches</span><span>Stronger matches</span></div></div>
 <div class="view-options"><label class="toggle"><span>Center guides<small>Line up your target</small></span><input id="grid" type="checkbox"><span class="switch" aria-hidden="true"></span></label><label class="toggle"><span>Mirror preview<small>Coordinates stay camera-relative</small></span><input id="mirror" type="checkbox"><span class="switch" aria-hidden="true"></span></label></div>
 <div class="target-card"><div class="target-header"><span>TARGET POSITION</span><span id="target-state">NO TARGET</span></div><div class="target-content"><div><strong id="coordinates">X — <em>/</em> Y —</strong><small id="match">Highest-confidence match</small></div><div class="position-map" aria-label="Target position in camera frame"><div id="target-dot" hidden></div></div></div><div class="confidence-track"><span id="confidence-bar"></span></div></div>

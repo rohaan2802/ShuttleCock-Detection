@@ -57,6 +57,7 @@ function stop(message='Camera stopped.') {
   stream?.getTracks().forEach(track=>track.stop());stream=null;video.srcObject=null;
   $('start').disabled=false;$('stop').disabled=true;$('camera').disabled=false;
   $('pause').disabled=true;$('pause').textContent='Pause detection';$('pause').setAttribute('aria-pressed','false');
+  $('snapshot').disabled=true;
   $('paused-overlay').hidden=true;$('grid-overlay').hidden=true;
   $('target-dot').hidden=true;$('confidence-bar').style.width='0%';$('target-state').textContent='NO TARGET';
   $('session-note').textContent=frames?'Session ended':'Waiting to start';setState('idle');
@@ -122,10 +123,20 @@ $('start').addEventListener('click',async()=>{
     running=true;canvas.hidden=false;$('empty').hidden=true;$('indicator').classList.add('live');$('resolution').textContent=`${video.videoWidth} × ${video.videoHeight}`;
     paused=false;frames=0;smoothedFps=0;lastBoxes=[];startedAt=performance.now();$('frames').textContent='0';$('elapsed').textContent='00:00';
     timer=setInterval(updateTime,1000);$('session-note').textContent='Camera active';$('pause').disabled=false;setState('live');syncPreferences();
+    $('snapshot').disabled=false;
     loop(token,model);
   } catch(error){if(token===generation){console.error(error);stop(error.name==='NotAllowedError'?'Camera access denied. Allow it in browser settings, then retry.':error.name==='NotFoundError'?'No camera found. Connect a camera and try again.':error.name==='NotReadableError'?'Camera is busy. Close other camera apps and retry.':error.message);}}
 });
 $('stop').addEventListener('click',()=>stop());
+$('snapshot').addEventListener('click',()=>{
+  if(!running || !displayedFrame.width)return;
+  const link=document.createElement('a');link.download=`shuttlebot-${new Date().toISOString().replace(/[:.]/g,'-')}.png`;
+  link.href=canvas.toDataURL('image/png');link.click();status('Snapshot saved to your downloads.');
+});
+$('reset').addEventListener('click',()=>{
+  stop('Session reset. Ready when you are.');frames=0;smoothedFps=0;
+  $('frames').textContent='0';$('elapsed').textContent='00:00';$('session-note').textContent='Waiting to start';
+});
 $('pause').addEventListener('click',()=>{
   if(!running)return;paused=!paused;
   $('pause').textContent=paused?'Resume detection':'Pause detection';$('pause').setAttribute('aria-pressed',String(paused));
