@@ -27,6 +27,7 @@ The browser app now has a dark **Vision Studio** interface with responsive contr
 - **Center guides and mirror preview:** align the subject or use a familiar selfie view. Mirroring changes the preview only; reported coordinates and the target map stay relative to the original camera image, and labels remain readable.
 - **Camera source selection:** available device names appear after camera permission is granted. Stop the session before choosing another camera.
 - **Live telemetry:** shuttle count, smoothed processing FPS, analyzed frames, session duration, target position map and confidence bar. Frame count and elapsed time remain visible after Stop and reset when a new session starts. Session duration includes paused time.
+- **Save snapshot:** download the current annotated camera frame as a PNG while a session is active. **Reset session** clears the current telemetry and releases the camera.
 - **Saved preferences:** confidence, center guides and mirror settings are stored locally in your browser. Camera frames and device IDs are never persisted by these preferences.
 - **Keyboard controls:** Space starts/stops, P pauses/resumes and F expands the view. Shortcuts do not run while typing or interacting with form controls.
 
