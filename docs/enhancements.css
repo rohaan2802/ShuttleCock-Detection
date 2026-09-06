@@ -1,1 +1,9 @@
-.utility-row{display:flex;gap:8px;margin-top:9px}.utility-row button{font-size:9px;padding:8px 6px;color:#9eacc0;background:#111a26}
+.utility-row{display:flex;gap:8px;margin-top:10px}.utility-row button{font-size:11px;padding:10px 7px;color:#b7c5d8;background:#111a26;min-height:38px}
+
+/* Readability pass: keep the dense studio layout, but make every decision point easier to scan. */
+body{font-size:15px;line-height:1.45}
+.source,.private-pill{font-size:13px}.badge{font-size:9px}.eyebrow{font-size:11px;letter-spacing:1.7px}.subtitle{font-size:14px;line-height:1.65}.privacy{font-size:13px}.privacy small{font-size:11px}
+.feed-title{font-size:14px}.mode-badge{font-size:9px;padding:5px 7px}#resolution{font-size:10px}.camera-footer{font-size:12px}.local-label{font-size:9px}
+aside{padding:24px}.section-heading h2{font-size:19px}.section-heading>span{font-size:9px}label{font-size:12px;margin-bottom:10px}select,button{font-size:13px;padding:12px}select{min-height:44px}.primary{height:46px}.button-row button{font-size:12px;padding:11px 8px}.primary kbd{font-size:8px}.sensitivity{padding-top:20px;margin-top:21px}output{font-size:13px}.range-labels{font-size:10px}.toggle small{font-size:10px}.target-header{font-size:9px}.target-header span:last-child{font-size:8px}.target-content strong{font-size:20px}.target-content small{font-size:10px}.tips{font-size:11px}.tips p{font-size:11px}.tips summary span{font-size:18px}.metrics strong{font-size:28px}.metric-top{font-size:10px}.metrics small{font-size:11px}.metrics article{padding:17px 19px}.footer-dot{width:5px;height:5px}footer{font-size:11px}
+.status-wrap{font-size:12px}
+@media(max-width:760px){body{font-size:14px}.eyebrow{font-size:10px}.subtitle{font-size:13px}.source{font-size:11px}.feed-title{font-size:13px}#resolution{font-size:9px}.camera-footer{font-size:11px}aside{padding:22px}.section-heading h2{font-size:19px}label{font-size:12px}select,button{font-size:13px}.button-row button{font-size:11px}.toggle small{font-size:9px}.target-content strong{font-size:23px}.metrics strong{font-size:25px}.metric-top{font-size:9px}.metrics small{font-size:10px}footer{font-size:10px}}
