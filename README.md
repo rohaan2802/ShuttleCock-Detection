@@ -1,8 +1,10 @@
-# ShuttleBot — desktop robotics & free live web detection
+# ShuttleBot — Desktop Robotics & Free Live Web Detection
 
 YOLOv8n shuttlecock detection for an autonomous badminton service robot.
 
-**Live web app:** https://rohaan2802.github.io/ShuttleCock-Detection/
+## 🚀 Live Demo
+
+### https://rohaan2802.github.io/ShuttleCock-Detection/
 
 **Author:** Mohammad Rohaan · **Student ID:** i222327 · [GitHub](https://github.com/rohaan2802)
 
