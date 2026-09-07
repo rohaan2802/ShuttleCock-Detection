@@ -6,6 +6,10 @@ The responsive Vision Studio browser detector is shown below at desktop and mobi
 
 ![ShuttleBot Vision Studio desktop and mobile preview](docs/screenshots/preview.webp)
 
+<img width="640" height="502" alt="s1" src="https://github.com/user-attachments/assets/c70383cc-868b-40bc-89c3-11ec8033b104" />
+
+<img width="639" height="504" alt="s2" src="https://github.com/user-attachments/assets/aaeb42e5-7a67-4206-9d60-9cb6627e1522" />
+
 Individual captures: [desktop](docs/screenshots/desktop.webp) · [mobile](docs/screenshots/mobile.webp)
 
 The browser preview is a real static UI capture from `docs/index.html`; camera access is intentionally idle in documentation screenshots so no device permission or private video frame is recorded.
