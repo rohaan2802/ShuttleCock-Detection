@@ -2,45 +2,99 @@
 
 ## Project screenshots
 
-The project includes the original realtime PNG captures plus expanded, open screenshots for the interactive web app and the offline desktop application. The browser shots show user-facing controls and responsive states; the desktop shots show the OpenCV robotics workflow, action decisions, target error, FPS, and CSV logging.
+Total **15 clear feature screenshots** are shown below. Each screenshot is placed on its own line with a short note, so the UI stays large and easy to inspect in the README.
 
-### Original realtime captures
+### 01. Original desktop realtime run
 
-| Desktop realtime run | Mobile realtime run |
-|---|---|
-| ![Original desktop realtime web run](docs/screenshots/desktop.png) | ![Original mobile realtime web run](docs/screenshots/mobile.png) |
+Shows the previously captured desktop realtime web run.
 
-### Interactive web app - desktop
+<img src="docs/screenshots/desktop.png" alt="Original desktop realtime web run" width="100%">
 
-| Overview | Control room |
-|---|---|
-| ![Desktop overview with idle camera state](docs/screenshots/desktop-01-overview.png) | ![Desktop control room with camera source, threshold, guide and mirror controls](docs/screenshots/desktop-02-control-room.png) |
+### 02. Original mobile realtime run
 
-| Live detection | Paused guides | Session metrics |
-|---|---|---|
-| ![Desktop live detection with shuttlecock bounding boxes](docs/screenshots/desktop-03-live-detection.png) | ![Desktop paused detection with center guides and camera controls](docs/screenshots/desktop-04-paused-guides.png) | ![Desktop session metrics and tracking summary](docs/screenshots/desktop-05-session-metrics.png) |
+Shows the previously captured mobile realtime web run.
 
-### Interactive web app - mobile
+<img src="docs/screenshots/mobile.png" alt="Original mobile realtime web run" width="100%">
 
-| Mobile overview | Mobile live camera |
-|---|---|
-| ![Mobile overview with responsive landing and idle detector](docs/screenshots/mobile-01-overview.png) | ![Mobile live camera stage with shuttlecock detection boxes](docs/screenshots/mobile-02-camera-stage.png) |
+### 03. Web app desktop control room
 
-| Mobile controls | Mobile target telemetry | Mobile metrics |
-|---|---|---|
-| ![Mobile controls for camera, snapshot, reset, confidence, guides and mirror preview](docs/screenshots/mobile-03-controls.png) | ![Mobile target telemetry with coordinates, confidence and paused state](docs/screenshots/mobile-04-target-telemetry.png) | ![Mobile metrics cards and footer](docs/screenshots/mobile-05-metrics-footer.png) |
+Shows camera source, start/stop controls, confidence threshold, center guides, mirror preview, and target panel.
 
-### Offline desktop application
+<img src="docs/screenshots/desktop-02-control-room.png" alt="Desktop web app control room" width="100%">
 
-| Search mode | Turn left | Turn right |
-|---|---|---|
-| ![Offline desktop app searching when no shuttlecock is detected](docs/screenshots/offline-desktop-01-search.png) | ![Offline desktop app turning left when the target is left of center](docs/screenshots/offline-desktop-02-turn-left.png) | ![Offline desktop app turning right when the target is right of center](docs/screenshots/offline-desktop-03-turn-right.png) |
+### 04. Web app desktop live detection
 
-| Move forward | Pick and log |
-|---|---|
-| ![Offline desktop app moving forward when the shuttlecock is centered but far](docs/screenshots/offline-desktop-04-forward.png) | ![Offline desktop app triggering pick action and CSV telemetry logging](docs/screenshots/offline-desktop-05-pick-log.png) |
+Shows the main browser detection view with shuttlecock boxes, live status, controls, coordinates, and target confidence.
 
-The documentation-only screenshot mode renders the same committed static UI in deterministic states, so README captures do not require camera permission and do not record private camera frames.
+<img src="docs/screenshots/desktop-03-live-detection.png" alt="Desktop web app live shuttlecock detection" width="100%">
+
+### 05. Web app desktop paused guides
+
+Shows paused detection, center guide overlay, camera state, and controls while the feed remains visible.
+
+<img src="docs/screenshots/desktop-04-paused-guides.png" alt="Desktop web app paused detection with center guides" width="100%">
+
+### 06. Web app desktop session metrics
+
+Shows detection speed, frame count, session time, and tracking summary in a wide desktop layout.
+
+<img src="docs/screenshots/desktop-05-session-metrics.png" alt="Desktop web app session metrics" width="100%">
+
+### 07. Web app mobile live camera
+
+Shows the mobile camera stage with live shuttlecock detection boxes and responsive spacing.
+
+<img src="docs/screenshots/mobile-02-camera-stage.png" alt="Mobile web app live camera stage" width="100%">
+
+### 08. Web app mobile controls
+
+Shows mobile camera controls, snapshot/reset actions, confidence slider, guides, and mirror toggle.
+
+<img src="docs/screenshots/mobile-03-controls.png" alt="Mobile web app controls" width="100%">
+
+### 09. Web app mobile target telemetry
+
+Shows mobile target coordinates, confidence, target position map, and paused tracking state.
+
+<img src="docs/screenshots/mobile-04-target-telemetry.png" alt="Mobile web app target telemetry" width="100%">
+
+### 10. Web app mobile metrics
+
+Shows mobile metric cards for detected shuttle count, FPS, frames analyzed, and session time.
+
+<img src="docs/screenshots/mobile-05-metrics-footer.png" alt="Mobile web app metrics" width="100%">
+
+### 11. Offline desktop app search mode
+
+Shows the OpenCV desktop app when no shuttlecock is detected and the robot action is `SEARCH`.
+
+<img src="docs/screenshots/offline-desktop-01-search.png" alt="Offline desktop app search mode" width="100%">
+
+### 12. Offline desktop app turn left
+
+Shows a left-side target with center error and the robot decision `TURN_LEFT`.
+
+<img src="docs/screenshots/offline-desktop-02-turn-left.png" alt="Offline desktop app turn left action" width="100%">
+
+### 13. Offline desktop app turn right
+
+Shows a right-side target with center error and the robot decision `TURN_RIGHT`.
+
+<img src="docs/screenshots/offline-desktop-03-turn-right.png" alt="Offline desktop app turn right action" width="100%">
+
+### 14. Offline desktop app move forward
+
+Shows a centered target that is still far away, triggering the `FORWARD` action.
+
+<img src="docs/screenshots/offline-desktop-04-forward.png" alt="Offline desktop app forward action" width="100%">
+
+### 15. Offline desktop app pick and log
+
+Shows a large centered target triggering `PICK`, with FPS, target error, confidence, and CSV logging visible.
+
+<img src="docs/screenshots/offline-desktop-05-pick-log.png" alt="Offline desktop app pick action with CSV logging" width="100%">
+
+The documentation-only screenshot mode renders the committed static UI in deterministic states, so README captures do not require camera permission and do not record private camera frames.
 
 YOLOv8n shuttlecock detection for an autonomous badminton service robot.
 
