@@ -96,6 +96,14 @@ Shows a large centered target triggering `PICK`, with FPS, target error, confide
 
 The documentation-only screenshot mode renders the committed static UI in deterministic states, so README captures do not require camera permission and do not record private camera frames.
 
+## Simulation demo video
+
+The simulation video is included as a README-friendly MP4. Click the preview below to open the demo video.
+
+[![Simulation demo video preview](docs/videos/simulation-demo-poster.png)](docs/videos/simulation-demo.mp4)
+
+Direct video link: [docs/videos/simulation-demo.mp4](docs/videos/simulation-demo.mp4)
+
 YOLOv8n shuttlecock detection for an autonomous badminton service robot.
 
 ## 🚀 Live Demo
