@@ -14,7 +14,7 @@ Shows the previously captured desktop realtime web run.
 
 Shows the previously captured mobile realtime web run.
 
-<img src="docs/screenshots/mobile.png" alt="Original mobile realtime web run" width="100%">
+<img src="docs/screenshots/mobile.png" alt="Original mobile realtime web run" width="430">
 
 ### 03. Web app desktop control room
 
@@ -44,25 +44,25 @@ Shows detection speed, frame count, session time, and tracking summary in a wide
 
 Shows the mobile camera stage with live shuttlecock detection boxes and responsive spacing.
 
-<img src="docs/screenshots/mobile-02-camera-stage.png" alt="Mobile web app live camera stage" width="100%">
+<img src="docs/screenshots/mobile-02-camera-stage.png" alt="Mobile web app live camera stage" width="430">
 
 ### 08. Web app mobile controls
 
 Shows mobile camera controls, snapshot/reset actions, confidence slider, guides, and mirror toggle.
 
-<img src="docs/screenshots/mobile-03-controls.png" alt="Mobile web app controls" width="100%">
+<img src="docs/screenshots/mobile-03-controls.png" alt="Mobile web app controls" width="430">
 
 ### 09. Web app mobile target telemetry
 
 Shows mobile target coordinates, confidence, target position map, and paused tracking state.
 
-<img src="docs/screenshots/mobile-04-target-telemetry.png" alt="Mobile web app target telemetry" width="100%">
+<img src="docs/screenshots/mobile-04-target-telemetry.png" alt="Mobile web app target telemetry" width="430">
 
 ### 10. Web app mobile metrics
 
 Shows mobile metric cards for detected shuttle count, FPS, frames analyzed, and session time.
 
-<img src="docs/screenshots/mobile-05-metrics-footer.png" alt="Mobile web app metrics" width="100%">
+<img src="docs/screenshots/mobile-05-metrics-footer.png" alt="Mobile web app metrics" width="430">
 
 ### 11. Offline desktop app search mode
 
@@ -98,9 +98,11 @@ The documentation-only screenshot mode renders the committed static UI in determ
 
 ## Simulation demo video
 
-The simulation video is included as a README-friendly MP4. Click the preview below to open the demo video.
+The simulation demo is available as an MP4 with controls. If GitHub does not autoplay the embedded player in your browser, click the poster or the direct video link below.
 
-[![Simulation demo video preview](docs/videos/simulation-demo-poster.png)](docs/videos/simulation-demo.mp4)
+<video src="docs/videos/simulation-demo.mp4" poster="docs/videos/simulation-demo-poster.png" controls width="100%"></video>
+
+[![Play simulation demo video](docs/videos/simulation-demo-poster.png)](docs/videos/simulation-demo.mp4)
 
 Direct video link: [docs/videos/simulation-demo.mp4](docs/videos/simulation-demo.mp4)
 
