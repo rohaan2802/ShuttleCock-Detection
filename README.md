@@ -2,9 +2,15 @@
 
 ## Project screenshots
 
-The browser Vision Studio is documented with 10 fresh local screenshots: five desktop captures and five mobile captures. They cover the idle landing state, camera controls, live detection boxes, pause/guide behavior, target telemetry, session metrics, and responsive mobile layouts.
+The project includes the original realtime PNG captures plus expanded, open screenshots for the interactive web app and the offline desktop application. The browser shots show user-facing controls and responsive states; the desktop shots show the OpenCV robotics workflow, action decisions, target error, FPS, and CSV logging.
 
-### Desktop screens
+### Original realtime captures
+
+| Desktop realtime run | Mobile realtime run |
+|---|---|
+| ![Original desktop realtime web run](docs/screenshots/desktop.png) | ![Original mobile realtime web run](docs/screenshots/mobile.png) |
+
+### Interactive web app - desktop
 
 | Overview | Control room |
 |---|---|
@@ -14,7 +20,7 @@ The browser Vision Studio is documented with 10 fresh local screenshots: five de
 |---|---|---|
 | ![Desktop live detection with shuttlecock bounding boxes](docs/screenshots/desktop-03-live-detection.png) | ![Desktop paused detection with center guides and camera controls](docs/screenshots/desktop-04-paused-guides.png) | ![Desktop session metrics and tracking summary](docs/screenshots/desktop-05-session-metrics.png) |
 
-### Mobile screens
+### Interactive web app - mobile
 
 | Mobile overview | Mobile live camera |
 |---|---|
@@ -24,7 +30,17 @@ The browser Vision Studio is documented with 10 fresh local screenshots: five de
 |---|---|---|
 | ![Mobile controls for camera, snapshot, reset, confidence, guides and mirror preview](docs/screenshots/mobile-03-controls.png) | ![Mobile target telemetry with coordinates, confidence and paused state](docs/screenshots/mobile-04-target-telemetry.png) | ![Mobile metrics cards and footer](docs/screenshots/mobile-05-metrics-footer.png) |
 
-These documentation screenshots use the committed static app with a screenshot-only query mode, so they do not require camera permission and do not record private camera frames.
+### Offline desktop application
+
+| Search mode | Turn left | Turn right |
+|---|---|---|
+| ![Offline desktop app searching when no shuttlecock is detected](docs/screenshots/offline-desktop-01-search.png) | ![Offline desktop app turning left when the target is left of center](docs/screenshots/offline-desktop-02-turn-left.png) | ![Offline desktop app turning right when the target is right of center](docs/screenshots/offline-desktop-03-turn-right.png) |
+
+| Move forward | Pick and log |
+|---|---|
+| ![Offline desktop app moving forward when the shuttlecock is centered but far](docs/screenshots/offline-desktop-04-forward.png) | ![Offline desktop app triggering pick action and CSV telemetry logging](docs/screenshots/offline-desktop-05-pick-log.png) |
+
+The documentation-only screenshot mode renders the same committed static UI in deterministic states, so README captures do not require camera permission and do not record private camera frames.
 
 YOLOv8n shuttlecock detection for an autonomous badminton service robot.
 
