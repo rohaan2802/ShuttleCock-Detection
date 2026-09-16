@@ -2,17 +2,29 @@
 
 ## Project screenshots
 
-The responsive Vision Studio browser detector is shown below at desktop and mobile widths. The capture includes the live-view state, camera controls, confidence threshold, target position telemetry, and session metrics.
+The browser Vision Studio is documented with 10 fresh local screenshots: five desktop captures and five mobile captures. They cover the idle landing state, camera controls, live detection boxes, pause/guide behavior, target telemetry, session metrics, and responsive mobile layouts.
 
-![ShuttleBot Vision Studio desktop and mobile preview](docs/screenshots/preview.webp)
+### Desktop screens
 
-<img width="640" height="502" alt="s1" src="https://github.com/user-attachments/assets/c70383cc-868b-40bc-89c3-11ec8033b104" />
+| Overview | Control room |
+|---|---|
+| ![Desktop overview with idle camera state](docs/screenshots/desktop-01-overview.png) | ![Desktop control room with camera source, threshold, guide and mirror controls](docs/screenshots/desktop-02-control-room.png) |
 
-<img width="639" height="504" alt="s2" src="https://github.com/user-attachments/assets/aaeb42e5-7a67-4206-9d60-9cb6627e1522" />
+| Live detection | Paused guides | Session metrics |
+|---|---|---|
+| ![Desktop live detection with shuttlecock bounding boxes](docs/screenshots/desktop-03-live-detection.png) | ![Desktop paused detection with center guides and camera controls](docs/screenshots/desktop-04-paused-guides.png) | ![Desktop session metrics and tracking summary](docs/screenshots/desktop-05-session-metrics.png) |
 
-Individual captures: [desktop](docs/screenshots/desktop.webp) · [mobile](docs/screenshots/mobile.webp)
+### Mobile screens
 
-The browser preview is a real static UI capture from `docs/index.html`; camera access is intentionally idle in documentation screenshots so no device permission or private video frame is recorded.
+| Mobile overview | Mobile live camera |
+|---|---|
+| ![Mobile overview with responsive landing and idle detector](docs/screenshots/mobile-01-overview.png) | ![Mobile live camera stage with shuttlecock detection boxes](docs/screenshots/mobile-02-camera-stage.png) |
+
+| Mobile controls | Mobile target telemetry | Mobile metrics |
+|---|---|---|
+| ![Mobile controls for camera, snapshot, reset, confidence, guides and mirror preview](docs/screenshots/mobile-03-controls.png) | ![Mobile target telemetry with coordinates, confidence and paused state](docs/screenshots/mobile-04-target-telemetry.png) | ![Mobile metrics cards and footer](docs/screenshots/mobile-05-metrics-footer.png) |
+
+These documentation screenshots use the committed static app with a screenshot-only query mode, so they do not require camera permission and do not record private camera frames.
 
 YOLOv8n shuttlecock detection for an autonomous badminton service robot.
 
