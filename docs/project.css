@@ -1,0 +1,67 @@
+html { scroll-padding-top: 86px; }
+:root { --bg:#171c2a; --panel:#222a3c; --line:#50617b; --text:#f0f4fb; --muted:#c1cce0; --brand:#a9dcff; --project-soft:#2a3851; }
+:root[data-theme=light] {color-scheme:light;--bg:#f4f6fc;--panel:#fff;--line:#aebed6;--text:#182942;--muted:#435571;--brand:#204e91;--project-soft:#e1ebfc;}
+body { background:var(--bg); font:19px/1.62 Inter,system-ui,"Segoe UI",sans-serif; }
+.topbar { position:sticky;top:0;z-index:10;background:var(--bg);border-color:var(--line);padding-inline:clamp(14px, 2.6vw, 36px);gap:.6rem; }
+.brand {color:var(--text);margin-right:auto;min-width:0;flex-shrink:1;}
+.project-nav {display:flex;gap:.12rem;align-items:center;justify-content:flex-end;margin-left:auto;}
+.project-nav a {color:var(--text);font-size:18px;font-weight:750;padding:.48rem .42rem;border-radius:.4rem;}
+.project-nav a:hover,.project-nav a:focus-visible {background:var(--project-soft);color:var(--brand);}
+.project-icon {display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid var(--line);background:var(--panel);color:var(--text);}
+#project-menu {display:none;}
+[data-theme=light] .project-sun,:root:not([data-theme=light]) .project-moon {display:none;}
+#project-theme, #project-top {background:var(--brand);color:var(--bg);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--brand);}
+#project-theme {flex:0 0 46px;width:46px;height:46px;}
+#project-theme svg {width:24px;height:24px;stroke-width:2.2;}
+#project-top {position:fixed;bottom:1.1rem;right:1.1rem;z-index:9;width:58px;height:58px;border-radius:1rem;box-shadow:0 0 0 1px var(--brand),0 5px 16px #09132360;}
+#project-top svg {width:30px;height:30px;stroke-width:4;}
+#project-theme:hover, #project-top:hover {filter:brightness(1.1);}
+#sample-start {width:100%;margin-top:.6rem;}
+.intro h1 span,.subtitle {color:var(--muted);}
+.intro h1 {font:800 clamp(2rem,5vw,3.6rem)/1.1 Inter,system-ui,sans-serif;}
+.intro .subtitle {font-size:1rem;}
+[data-theme=light] .stage,[data-theme=light] .stage #empty {color:#e9edf5;}
+[data-theme=light] :is(.camera-panel,aside,.metrics article,.target-card) {background:var(--panel);color:var(--text);border-color:var(--line);}
+[data-theme=light] :is(.camera-footer,.panel-top,.target-header,.metric-top,.metrics small,aside small,aside label) {color:var(--muted);}
+.project-section {padding:2.3rem 0;border-top:1px solid var(--line);margin-top:1.35rem;}
+.project-section h2 {font-size:clamp(1.65rem,3vw,2.5rem);margin:0 0 .75rem;}
+.project-section p {max-width:79ch;color:var(--muted);}
+.project-section a {color:var(--brand);text-decoration:underline;text-underline-offset:.2em;}
+.project-scroll {overflow:auto;border:1px solid var(--line);border-radius:.55rem;background:var(--panel);}
+.project-scroll table {border-collapse:collapse;width:100%;min-width:560px;text-align:left;}
+.project-scroll td,.project-scroll th {padding:.65rem .9rem;border-bottom:1px solid var(--line);}
+.project-scroll th {background:var(--project-soft);}
+.project-scroll pre {margin:0;padding:1rem;width:max-content;}
+.project-slider {width:100%;accent-color:var(--brand);}
+.project-actions {display:flex;gap:.8rem;flex-wrap:wrap;margin:1rem 0;}
+.project-actions a,.project-filters input,.project-filters select {background:var(--panel);color:var(--brand);border:1px solid var(--line);border-radius:.5rem;padding:.55rem .8rem;}
+.project-filters {display:grid; grid-template-columns:minmax(0, 1.55fr) minmax(0, 1fr); gap:.75rem; align-items:end; max-width:760px; margin:1rem 0;}
+.project-filters label {display:grid; grid-template-rows:auto 46px; gap:.35rem; min-width:0; color:var(--text); font-size:1rem;}
+.project-filters :is(input, select) {width:100%; min-width:0; height:46px; min-height:46px; margin:0; padding:.45rem .6rem; font:inherit; color:var(--text);}
+.simulation-player {display:block; width:min(100%, 850px); aspect-ratio:var(--video-ratio, 16 / 9); height:auto; background:#101927; border:1px solid var(--line); border-radius:.75rem;}
+.project-gallery {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;}
+.project-gallery figure {margin:0;background:var(--panel);border:1px solid var(--line);border-radius:.7rem;overflow:hidden;}
+.project-gallery img {display:block;width:100%;height:auto;}
+.project-gallery figcaption {padding:.7rem .9rem;}
+.project-gallery figcaption span {display:block;font-size:.91rem;color:var(--muted);}
+#project-viewer {width:min(1120px,calc(100% - 1rem));max-height:calc(100dvh - 1rem);background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:.7rem;}
+#project-viewer::backdrop {background:#051125df;}
+.project-stage {overflow:auto;max-height:66dvh;margin:.65rem 0;}
+.project-stage img {display:block;max-width:100%;max-height:66dvh;height:auto;margin:auto;touch-action:pan-y;}
+.project-stage.zoom img {width:1440px;max-width:none;max-height:none;touch-action:auto;}
+[hidden] {display:none!important;}
+@media(max-width:1050px){.project-gallery{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:1320px){#project-menu{display:grid;}.project-nav{display:none;position:absolute;inset:100% 0 auto;background:var(--panel);border-bottom:1px solid var(--line);padding:.75rem 1rem;max-height:75dvh;overflow:auto;}.project-nav.open{display:grid;gap:.1rem;margin-left:0;}.topbar{gap:.5rem;}}
+@media(max-width:610px){.project-gallery{grid-template-columns:1fr;}}
+
+
+.image-control { display:grid; gap:.4rem; margin-top:1rem; font-size:1rem; }
+.image-control input { width:100%; min-width:0; color:var(--text); }
+.image-control small { font-size:.82rem; color:var(--muted); }
+.image-control input::file-selector-button { border:1px solid var(--line); border-radius:.4rem; padding:.4rem; background:var(--project-soft); color:var(--text); cursor:pointer; }
+.project-icon span { display:grid; place-items:center; }
+.project-icon:focus-visible, .project-nav a:focus-visible { outline:3px solid var(--brand); outline-offset:2px; }
+@media(max-width:610px) { body {font-size:18px;} }
+
+.saved-session-heading {margin:1.5rem 0 .65rem; font-size:1rem;}
+.project-section :not(pre) > code { overflow-wrap:anywhere; }

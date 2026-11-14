@@ -1,0 +1,22 @@
+ShuttleCock Detection - Dataset setup
+
+1. Keep both downloaded files together in ShuttleCock-Detection_Release,
+   next to the cloned ShuttleCock-Detection folder. Keep the filenames:
+
+   ShuttleCock_YOLO_Dataset.zip.part01
+   ShuttleCock_YOLO_Dataset.zip.part02
+
+2. Open PowerShell in the ShuttleCock-Detection repo and run:
+
+   python scripts/join_dataset.py ../ShuttleCock-Detection_Release ../ShuttleCock_YOLO_Dataset.zip
+
+3. Wait for the "Verified dataset ZIP" message. The script joins part01 followed by part02 and checks the SHA-256 against the original archive.
+   The complete ShuttleCock_YOLO_Dataset.zip appears next to the repo.
+   Choose a new output path if a ZIP with that name already exists.
+
+4. Extract the ZIP normally to inspect it. For training, use this command
+   to extract it to a new folder and generate a portable data_local.yaml:
+
+   python scripts/prepare_dataset.py ../ShuttleCock_YOLO_Dataset.zip ../ShuttleCock_YOLO_Dataset
+
+   Use ShuttleCock_YOLO_Dataset/data_local.yaml with Ultralytics.

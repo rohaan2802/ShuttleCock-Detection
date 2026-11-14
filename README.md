@@ -1,275 +1,417 @@
-# ShuttleBot — Desktop Robotics & Free Live Web Detection
+<div align="center">
 
-## Project screenshots
+# ShuttleCock Detection
 
-Total **15 clear feature screenshots** are shown below. Each screenshot is placed on its own line with a short note, so the UI stays large and easy to inspect in the README.
+**Live shuttlecock localization for ShuttleBot using YOLOv8n, ONNX, and browser-side inference.**
 
-### 01. Original desktop realtime run
+[![Browser](https://img.shields.io/badge/Live%20detector-ONNX-2358a1?logo=googlechrome&logoColor=white&style=for-the-badge)](https://rohaan2802.github.io/ShuttleCock-Detection/)
+[![Model](https://img.shields.io/badge/Model-YOLOv8n-265d69?logo=pytorch&logoColor=white&style=for-the-badge)](docs/models/shuttle.json)
+[![Dataset](https://img.shields.io/badge/Dataset-YOLO-345e88?logo=databricks&logoColor=white&style=for-the-badge)](#dataset)
+[![Tests](https://img.shields.io/badge/Checks-Decoder-375d43?logo=nodedotjs&logoColor=white&style=for-the-badge)](tests/detection.test.js)
+[![Gallery](https://img.shields.io/badge/Gallery-24%20figures-564693?logoColor=white&style=for-the-badge)](#screenshots)
 
-Shows the previously captured desktop realtime web run.
+[![Camera and image modes](https://img.shields.io/badge/Input-Camera%20%26%20images-156358?logo=googlechrome&logoColor=white&style=for-the-badge)](#detector-workflow)
+[![Inference code](https://img.shields.io/badge/Code-Browser%20inference-28495a?logo=javascript&logoColor=white&style=for-the-badge)](docs/app.js)
+[![Training notebook](https://img.shields.io/badge/Notebook-Training%20%26%20evaluation-8c512f?logo=jupyter&logoColor=white&style=for-the-badge)](i222327_ML_FINALPROJECT.ipynb)
+[![Simulation video](https://img.shields.io/badge/Video-ShuttleBot%20simulation-375b78?logo=youtube&logoColor=white&style=for-the-badge)](docs/videos/simulation-demo.mp4)
 
-<img src="docs/screenshots/desktop.png" alt="Original desktop realtime web run" width="100%">
+</div>
 
-### 02. Original mobile realtime run
+## Live Links
 
-Shows the previously captured mobile realtime web run.
+| What | Link |
+| --- | --- |
+| Repository | [https://github.com/rohaan2802/ShuttleCock-Detection](https://github.com/rohaan2802/ShuttleCock-Detection) |
+| GitHub Pages | [https://rohaan2802.github.io/ShuttleCock-Detection/](https://rohaan2802.github.io/ShuttleCock-Detection/) |
+| Dataset reference | [https://www.kaggle.com/datasets/ayushsinha731/shuttle-badminton-photos](https://www.kaggle.com/datasets/ayushsinha731/shuttle-badminton-photos) |
 
-<img src="docs/screenshots/mobile.png" alt="Original mobile realtime web run" width="430">
+## Contents
 
-### 03. Web app desktop control room
+- [Overview](#overview)
+- [Detector Workflow](#detector-workflow)
+- [What’s Inside](#whats-inside)
+- [Project Breakdown](#project-breakdown)
+- [Dataset](#dataset)
+- [Setup](#setup)
+- [Results](#results)
+- [Project Evidence](#project-evidence)
+- [CSV and Code Reference](#csv-and-code-reference)
+- [Limitations](#limitations)
+- [About the Author](#about-the-author)
+- [Folder Structure](#folder-structure)
+- [Screenshots](#screenshots)
 
-Shows camera source, start/stop controls, confidence threshold, center guides, mirror preview, and target panel.
+## Overview
 
-<img src="docs/screenshots/desktop-02-control-room.png" alt="Desktop web app control room" width="100%">
+A single-class YOLOv8n model locates badminton shuttlecocks for the ShuttleBot robotics project. The browser loads its ONNX export and WebAssembly runtime from this site. Live camera frames and the bundled test image are processed on the device, and the camera starts only on request.
 
-### 04. Web app desktop live detection
+## Detector Workflow
 
-Shows the main browser detection view with shuttlecock boxes, live status, controls, coordinates, and target confidence.
+Run `python app.py web`, then choose an input in the detector panel.
 
-<img src="docs/screenshots/desktop-03-live-detection.png" alt="Desktop web app live shuttlecock detection" width="100%">
+| Input | What it does |
+| --- | --- |
+| **Start camera** | Runs inference continuously on the selected camera. Use Pause, Stop camera, or Reset session to control the stream. |
+| **Try test image** | Analyzes a bundled, unannotated test frame so a reviewer can see real boxes and coordinates immediately. |
+| **Choose a local image** | Opens a JPEG, PNG or WebP image up to 20 MB. The browser decodes the file and runs inference on the device. |
 
-### 05. Web app desktop paused guides
+Move the confidence slider to see which boxes pass the threshold. In still-image mode the detector runs the model once, then decodes the cached predictions again as you adjust the threshold. The browser shows milliseconds for a still image and processing FPS for the camera. Use **Save snapshot** to save the annotated frame locally.
 
-Shows paused detection, center guide overlay, camera state, and controls while the feed remains visible.
+The target center is measured in original frame pixels with the origin at the upper-left. Mirror preview changes how the frame is drawn, while telemetry still uses the original frame. The [sample provenance](docs/samples/source.txt) identifies the frame in the original test split. See the [browser controller](docs/app.js), [decoder](docs/detection.js), and [ONNX metadata](docs/models/shuttle.json).
 
-<img src="docs/screenshots/desktop-04-paused-guides.png" alt="Desktop web app paused detection with center guides" width="100%">
+## What’s Inside
 
-### 06. Web app desktop session metrics
+The browser detector is in docs/. The desktop runner adds robot guidance and CSV logging. The Gradio app runs inference in Python. Training artifacts, the original reports and the simulation video document the wider project.
 
-Shows detection speed, frame count, session time, and tracking summary in a wide desktop layout.
+| File | Purpose |
+| --- | --- |
+| [docs/index.html](docs/index.html) | Pages entry point and live detector |
+| [docs/app.js](docs/app.js) | Camera and local image inputs, cached predictions, model session and overlays |
+| [docs/detection.js](docs/detection.js) | Letterboxing, normalized RGB tensor and box decoding |
+| [docs/models/shuttle.onnx](docs/models/shuttle.onnx) | Browser model |
+| [app.py](app.py) | Local launcher |
+| [realtime_detect.py](realtime_detect.py) | Desktop detection, robot guidance and CSV logging |
+| [webapp/app.py](webapp/app.py) | Gradio detector |
+| [i222327_ML_FINALPROJECT.ipynb](i222327_ML_FINALPROJECT.ipynb) | Training and evaluation notebook |
+| [My Drive/ShuttleBot/runs/shuttle_train_v1/results.csv](My%20Drive/ShuttleBot/runs/shuttle_train_v1/results.csv) | Saved epoch metrics |
+| [tests/verify_export.py](tests/verify_export.py) | PyTorch and ONNX output parity |
+| [archive/README.md](archive/README.md) | Original versions and dataset audit |
 
-<img src="docs/screenshots/desktop-05-session-metrics.png" alt="Desktop web app session metrics" width="100%">
+## Project Breakdown
 
-### 07. Web app mobile live camera
+The camera frame is resized with preserved aspect ratio into a padded 320 × 320 RGB tensor. The model produces 2,100 candidates. The decoder filters by confidence, suppresses overlapping detections, and maps the boxes back to the original frame. The UI shows the highest-confidence target center in camera pixels. The original training run used 640-pixel inputs for 50 epochs.
 
-Shows the mobile camera stage with live shuttlecock detection boxes and responsive spacing.
+## Dataset
 
-<img src="docs/screenshots/mobile-02-camera-stage.png" alt="Mobile web app live camera stage" width="430">
+The preserved YOLO archive contains 14,991 images and matching label files: 10,816 training, 2,666 validation, and 1,509 test images. The full ZIP is supplied separately. Its original configuration contains a Kaggle path, so use the extraction helper for a portable local configuration.
 
-### 08. Web app mobile controls
+See the [dataset manifest](archive/README.md#dataset) and [preparation helper](scripts/prepare_dataset.py).
 
-Shows mobile camera controls, snapshot/reset actions, confidence slider, guides, and mirror toggle.
 
-<img src="docs/screenshots/mobile-03-controls.png" alt="Mobile web app controls" width="430">
+### Reassemble the dataset ZIP
 
-### 09. Web app mobile target telemetry
+1. Download `ShuttleCock_YOLO_Dataset.zip.part01` and `ShuttleCock_YOLO_Dataset.zip.part02`. Keep both files in `ShuttleCock-Detection_Release`, next to the cloned repo.
+2. Open PowerShell in the `ShuttleCock-Detection` repo and run:
 
-Shows mobile target coordinates, confidence, target position map, and paused tracking state.
+   ```powershell
+   python scripts/join_dataset.py ../ShuttleCock-Detection_Release ../ShuttleCock_YOLO_Dataset.zip
+   ```
 
-<img src="docs/screenshots/mobile-04-target-telemetry.png" alt="Mobile web app target telemetry" width="430">
+3. Wait for **Verified dataset ZIP**. The script joins the parts in order, verifies the original SHA-256, and saves `ShuttleCock_YOLO_Dataset.zip` next to the repo.
+4. Extract the ZIP normally. To create a portable `data_local.yaml` for training, run:
 
-### 10. Web app mobile metrics
+   ```powershell
+   python scripts/prepare_dataset.py ../ShuttleCock_YOLO_Dataset.zip ../ShuttleCock_YOLO_Dataset
+   ```
 
-Shows mobile metric cards for detected shuttle count, FPS, frames analyzed, and session time.
+[Download plain-text instructions](docs/dataset-reassembly.txt).
 
-<img src="docs/screenshots/mobile-05-metrics-footer.png" alt="Mobile web app metrics" width="430">
+## Setup
 
-### 11. Offline desktop app search mode
+Run the web launcher from the repository root and open localhost. Choose Start camera or Try test image for camera-free inference. The browser app requires JavaScript and WebAssembly, and camera access requires HTTPS or localhost.
 
-Shows the OpenCV desktop app when no shuttlecock is detected and the robot action is `SEARCH`.
-
-<img src="docs/screenshots/offline-desktop-01-search.png" alt="Offline desktop app search mode" width="100%">
-
-### 12. Offline desktop app turn left
-
-Shows a left-side target with center error and the robot decision `TURN_LEFT`.
-
-<img src="docs/screenshots/offline-desktop-02-turn-left.png" alt="Offline desktop app turn left action" width="100%">
-
-### 13. Offline desktop app turn right
-
-Shows a right-side target with center error and the robot decision `TURN_RIGHT`.
-
-<img src="docs/screenshots/offline-desktop-03-turn-right.png" alt="Offline desktop app turn right action" width="100%">
-
-### 14. Offline desktop app move forward
-
-Shows a centered target that is still far away, triggering the `FORWARD` action.
-
-<img src="docs/screenshots/offline-desktop-04-forward.png" alt="Offline desktop app forward action" width="100%">
-
-### 15. Offline desktop app pick and log
-
-Shows a large centered target triggering `PICK`, with FPS, target error, confidence, and CSV logging visible.
-
-<img src="docs/screenshots/offline-desktop-05-pick-log.png" alt="Offline desktop app pick action with CSV logging" width="100%">
-
-The documentation-only screenshot mode renders the committed static UI in deterministic states, so README captures do not require camera permission and do not record private camera frames.
-
-## Simulation demo video
-
-The simulation demo is available as an MP4 with controls. If GitHub does not autoplay the embedded player in your browser, click the poster or the direct video link below.
-
-<video src="docs/videos/simulation-demo.mp4" poster="docs/videos/simulation-demo-poster.png" controls width="100%"></video>
-
-[![Play simulation demo video](docs/videos/simulation-demo-poster.png)](docs/videos/simulation-demo.mp4)
-
-Direct video link: [docs/videos/simulation-demo.mp4](docs/videos/simulation-demo.mp4)
-
-YOLOv8n shuttlecock detection for an autonomous badminton service robot.
-
-## 🚀 Live Demo
-
-### https://rohaan2802.github.io/ShuttleCock-Detection/
-
-**Author:** Mohammad Rohaan · **Student ID:** i222327 · [GitHub](https://github.com/rohaan2802)
-
-## Choose how to run
-
-| Mode | Start | Processing | Features |
-|---|---|---|---|
-| Public web app | [Open live detector](https://rohaan2802.github.io/ShuttleCock-Detection/) | Visitor's browser | Live camera, boxes, confidence, coordinates; no uploads or CSV |
-| Local web app | `python app.py web` or `run-web.bat` | Your browser | Same files and interface as the public website |
-| Desktop robotics | `python app.py desktop` or `run-desktop.bat` | Python / OpenCV | Camera, boxes, robot action suggestions, CSV logs |
-| Original Gradio app | `python app.py gradio` or existing `run.bat` | Local Python server | Original browser interface and detection |
-| Browser model export | `python app.py export` | Local Python | Rebuilds ONNX from the canonical trained checkpoint |
-
-`app.py` is the common launcher. The existing desktop and Gradio entry points still work directly. The Python application and JavaScript browser runtime use different execution formats of the **same trained model**, not separately trained models. GitHub Pages serves static files and cannot execute a Python `.py` file.
-
-## Live camera demo
-
-The browser app now has a dark **Vision Studio** interface with responsive controls and teal/violet highlights.
-
-- **Pause / resume detection:** freezes analysis and the displayed frame while keeping the camera on. Use **Stop camera** to release the camera completely.
-- **Fullscreen view:** expands the camera panel; use its button or Escape to return. Browsers without native fullscreen use an expanded in-page view.
-- **Center guides and mirror preview:** align the subject or use a familiar selfie view. Mirroring changes the preview only; reported coordinates and the target map stay relative to the original camera image, and labels remain readable.
-- **Camera source selection:** available device names appear after camera permission is granted. Stop the session before choosing another camera.
-- **Live telemetry:** shuttle count, smoothed processing FPS, analyzed frames, session duration, target position map and confidence bar. Frame count and elapsed time remain visible after Stop and reset when a new session starts. Session duration includes paused time.
-- **Save snapshot:** download the current annotated camera frame as a PNG while a session is active. **Reset session** clears the current telemetry and releases the camera.
-- **Saved preferences:** confidence, center guides and mirror settings are stored locally in your browser. Camera frames and device IDs are never persisted by these preferences.
-- **Keyboard controls:** Space starts/stops, P pauses/resumes and F expands the view. Shortcuts do not run while typing or interacting with form controls.
-
-1. Open the live app in a modern browser with WebAssembly support (current Chrome, Edge, Firefox or Safari).
-2. Choose rear/default or front camera, then click **Start camera** and allow access.
-3. The detector downloads once for the session, then processes frames on your device. The initial model/runtime download is approximately 24 MB.
-4. Hold a shuttlecock in good light. Boxes, confidence and the strongest match's center coordinates appear. Coordinates use the original camera image, with `(0, 0)` at its top-left.
-5. Click **Stop camera** to release the camera. Switching away from the tab also stops capture; restart on return.
-
-No account, payment card, paid inference API, Python installation or running owner laptop is needed for visitors. Camera frames are not uploaded or saved by this browser app. GitHub delivers the app/model files; Google Fonts supplies optional fonts. Device speed and lighting affect performance; fast motion, tiny targets and low-powered phones can reduce detection quality. This is a student demo, with no guaranteed FPS or service uptime.
-
-## Local setup
-
-Clone the repository and work from its root:
-
-```bash
-git clone https://github.com/rohaan2802/ShuttleCock-Detection.git
-cd ShuttleCock-Detection
-```
-
-**Browser app:** only Python's standard library is needed to serve the committed files:
-
-```bash
-python app.py web
-```
-
-Open `http://localhost:8000`. For another port use `python app.py web --port 8080`; use `--no-browser` to suppress automatic browser opening. Use a local HTTP server instead of double-clicking `docs/index.html`, because model loading and camera permissions require an appropriate origin. Remote camera access requires HTTPS; localhost is supported for development.
-
-**Desktop robotics:** Python 3.11 or 3.12 is recommended. Use a virtual environment:
-
-```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
-python -m pip install -r requirements-desktop.txt
-python app.py desktop
-```
-
-Press **q** to quit. Options are forwarded to the original detector:
-
-```bash
-python app.py desktop --camera-index 1 --conf 0.35 --imgsz 640
-python app.py desktop --log-csv logs/session.csv
-```
-
-The desktop program displays `SEARCH`, `TURN_LEFT`, `TURN_RIGHT`, `FORWARD` or `PICK` based on target position and bounding-box area. These are suggested actions; this script does not send motor commands to an Arduino. Its CSV output includes coordinates, errors, confidence, action and FPS. Raspberry Pi deployment still needs compatible Python/OpenCV packages and a camera; Arduino/motor integration is separate.
-
-**Original Gradio app:** install its dependencies in a separate virtual environment if possible, since headless OpenCV packages can conflict with desktop OpenCV's GUI support:
-
-```bash
-python -m pip install -r webapp/requirements.txt
-python app.py gradio
-```
-
-Existing `run.bat` and `run-share.bat` retain their original behavior. A Gradio share link is temporary and requires the host computer to stay running. The public GitHub Pages app is independent of that Python server.
-
-## One checkpoint, multiple runtimes
-
-The source of truth is:
-
-`ShuttleBotRealtime/models/shuttle_yolov8n_best.pt`
-
-- Desktop uses this checkpoint by default, regardless of the shell's working directory.
-- Gradio prefers this same checkpoint, with its old `webapp/models/` copy retained as a fallback for standalone legacy deployments.
-- `docs/models/shuttle.onnx` is a generated browser copy, using fixed `[1, 3, 320, 320]` RGB input and raw `[1, 5, 2100]` single-class YOLOv8 output.
-- `docs/models/shuttle.json` records source/export hashes, classes and preprocessing settings.
-- Browser preprocessing uses letterboxing (padding 114), RGB values divided by 255, followed by confidence filtering and non-maximum suppression at IoU 0.5. Desktop defaults to 640px inference, so detections can differ from the 320px browser demo even though the weights are shared.
-
-After updating/retraining the checkpoint:
-
-```bash
-python -m pip install -r requirements-export.txt
-python app.py export
-python tests/verify_export.py
-```
-
-Commit both the new ONNX file and JSON metadata with the checkpoint update. Do not edit generated ONNX files by hand. Training notebooks, result images, simulation scripts and robotics reports remain in the repository.
-
-## Browser development and verification
-
-The website is plain HTML/CSS/JavaScript, with ONNX Runtime Web **1.22.0** vendored under `docs/vendor/`. No cloud inference service or frontend build server is required.
-
-```bash
-npm ci --ignore-scripts
-npm run vendor
+```powershell
+python app.py web --no-browser
+# Open http://localhost:8000
 npm test
-python tests/verify_export.py
-node tests/verify_wasm.mjs
 ```
 
-The tests cover RGB tensor layout, letterboxing, coordinate recovery, confidence filtering, overlap suppression and malformed output. The Python verification compares exported predictions against the checkpoint on three repository sample images. The WASM check compares browser-runtime predictions against the Python ONNX reference and requires a real detection. Sample outputs stay in ignored `.test-output/`; these samples are existing repository images, not camera captures.
+For the desktop path, install `requirements-desktop.txt` and run `python app.py desktop --help`. For Gradio, install `webapp/requirements.txt` and run `python app.py gradio`. To rebuild the browser model and compare exports, install `requirements-export.txt` and run `python app.py export` followed by `python tests/verify_export.py`. See the [deployment guide](DEPLOY.md). For saved-video inference, run `python Simulation.py path/to/video.mp4` after installing the desktop requirements. Run `python scripts/build_figures.py` with OpenCV, ONNX Runtime, Matplotlib, NumPy and Pillow to rebuild the gallery.
 
-## GitHub Pages deployment & future updates
+## Results
 
-The Pages source is **main → /docs**. The live URL is:
+The original epoch-50 validation history records precision 0.74647, recall 0.60796, mAP50 0.64776, and mAP50–95 0.29328. These saved scores describe the training run. The ONNX export was checked against PyTorch on three repository images, with maximum absolute raw-tensor difference 0.00048828125. The still-image demo runs the same browser model as the live camera.
 
-**https://rohaan2802.github.io/ShuttleCock-Detection/**
+- [Saved epoch metrics](My%20Drive/ShuttleBot/runs/shuttle_train_v1/results.csv)
+- [Original simulation video](docs/videos/simulation-demo.mp4)
+- [Shuttle Bot ML design](Shuttle%20Bot%20ML%20Design.pdf)
 
-In repository **Settings → Pages**, choose **Deploy from a branch**, branch **main**, folder **/docs**, and save. GitHub republishes the website after pushes to the publishing source. Check **Actions → pages build and deployment** for completion. Public GitHub Pages hosting on GitHub Free requires no paid compute service or payment card.
+### How to read the scores
 
-The repository remote should remain:
+Precision measures how many predicted positives are correct. Recall measures how many annotated positives were found. mAP50 uses an intersection-over-union threshold of 0.50, while mAP50–95 averages over stricter thresholds as well. The difference between those scores matters for small objects, where moving a predicted box by a few pixels can substantially reduce overlap.
 
-```bash
-git remote -v
-# origin https://github.com/rohaan2802/ShuttleCock-Detection.git
+The browser smoke test covers deployment wiring and model execution on an example image. The training metrics summarize a separate validation run.
+
+## Project Evidence
+
+[Download the Excel workbook](docs/shuttlebot-evidence.xlsx) for all 50 training epochs, validation milestones, annotation counts, and both desktop frame logs. The workbook includes filters and charts. The original [epoch CSV](My%20Drive/ShuttleBot/runs/shuttle_train_v1/results.csv) and [desktop CSV](detection_log.csv) remain available for inspection.
+
+### Dataset and annotation audit
+
+The YOLO ZIP contains one class, `0 = shuttle`. Each image has a matching text file. A populated row stores class, center x, center y, width and height in normalized coordinates. Empty files contribute zero annotated boxes.
+
+| Split | Images / label files | Empty labels | Annotated boxes |
+| --- | ---: | ---: | ---: |
+| Train | 10,816 | 385 | 10,680 |
+| Validation | 2,666 | 96 | 2,612 |
+| Test | 1,509 | 53 | 1,493 |
+| Total | 14,991 | 534 | 14,785 |
+
+The archive does not establish whether related frames from the same recording were grouped when splitting the data. See the [dataset audit](archive/README.md#dataset) for the ZIP checksum and portable extraction commands.
+
+### Training, test results and model export
+
+The recorded run fine-tuned pretrained YOLOv8n for 50 epochs with input size 640, batch size 16, seed 0 and automatic optimizer selection. The browser model uses an RGB input tensor of shape `[1, 3, 320, 320]`. Its output shape is `[1, 5, 2100]`, containing four box values and one class score per candidate. The browser reverses letterbox padding and scaling, clips boxes to the frame, and applies non-max suppression at IoU 0.50. The default confidence threshold is 0.35.
+
+| Validation metric | Epoch 1 | Epoch 50 | Recorded peak |
+| --- | ---: | ---: | --- |
+| Precision | 0.39654 | 0.74647 | 0.76121 at epoch 44 |
+| Recall | 0.18951 | 0.60796 | 0.60796 at epoch 50 |
+| mAP50 | 0.15138 | 0.64776 | 0.64803 at epoch 49 |
+| mAP50–95 | 0.05306 | 0.29328 | 0.29328 at epoch 50 |
+
+The notebook's saved test evaluation reports **0.829 precision, 0.624 recall, 0.708 mAP50 and 0.358 mAP50–95** across **1,509 images and 1,493 annotated instances**. These scores belong to that saved test run. The browser parity checks used selected images, so full browser-resolution test-set accuracy remains unmeasured.
+
+### Desktop guidance and saved frame logs
+
+The desktop runner picks the highest-confidence detection and computes the center, signed pixel offset from frame center and normalized bounding-box area. It defaults to confidence 0.35, overlap threshold 0.50, input size 640, horizontal tolerance 40 px and pick area threshold 0.08.
+
+| Decision | Condition |
+| --- | --- |
+| SEARCH | No box passes the detector threshold. |
+| PICK | The selected box covers at least 8% of the frame and is within 40 px of horizontal center. |
+| TURN_LEFT / TURN_RIGHT | The selected box center falls outside the horizontal tolerance. |
+| FORWARD | The box is centered and below the pick area threshold. |
+
+#### Saved session comparison
+
+| Saved session | Rows | Detected rows | Median FPS | SEARCH / LEFT / RIGHT / FORWARD / PICK |
+| --- | ---: | ---: | ---: | --- |
+| Repository log | 3,153 | 56 | 5.30 | 3,097 / 27 / 19 / 9 / 1 |
+| Archived log | 1,992 | 950 | 5.50 | 1,042 / 344 / 342 / 222 / 42 |
+
+The logs store elapsed time, frame index, action, confidence, center pixels, signed offsets, normalized area and instantaneous FPS. They lack frame-by-frame ground truth and matched recording conditions, so detection counts describe the individual sessions. PICK records a software decision. The chassis, Raspberry Pi, camera and servo mechanism are described in the design report, and physical actuation remains unverified.
+
+### Review the project end to end
+
+1. Open the bundled test image and inspect the score, box and center coordinates.
+2. Raise the confidence cutoff above the detected score. The overlay drops that candidate using the cached output.
+3. Compare the notebook test metrics with the training history and desktop logs in the Excel workbook.
+4. Watch the simulation to see the proposed motion sequence. The desktop CSV records software decisions during camera sessions.
+
+### Reports, simulation and implementation
+
+| Evidence | What it covers |
+| --- | --- |
+| [Robot design report](Shuttle%20Bot%20Design%20Report.pdf) | Proposed chassis, power, camera, Raspberry Pi and servo-based collection. |
+| [ML design notes](Shuttle%20Bot%20ML%20Design.pdf) | Detection task, model options, proposed data acquisition and camera integration. |
+| [Project slides](slides.pdf) | Dataset, preprocessing, training and evaluation summary. |
+| [Training notebook](i222327_ML_FINALPROJECT.ipynb) | Colab training, checkpoint selection, test metrics and prediction workflow. |
+| [Colab PDF](i222327_ML_FINALPROJECT.ipynb%20-%20Colab.pdf) | Readable export of the notebook. |
+| [Simulation video](docs/videos/simulation-demo.mp4) | Recorded demonstration of the proposed robot workflow. |
+| [Desktop runner](realtime_detect.py) | Webcam loop, guidance thresholds and frame logging. |
+| [Browser controller](docs/app.js) and [decoder](docs/detection.js) | Camera and still-image state, ONNX inference, box recovery and overlay rendering. |
+| [Export parity check](tests/verify_export.py) | Numerical comparison of PyTorch and ONNX tensors on selected images. |
+
+The dataset release uses two files, approximately 1.50 GB and 654 MB. Join both by following the [dataset reconstruction instructions](archive/README.md#dataset). To regenerate the workbook, install `openpyxl` and run the [workbook builder](scripts/build_evidence_workbook.py) from the repository root.
+
+```powershell
+python scripts/build_evidence_workbook.py ../ShuttleCock_YOLO_Dataset.zip
 ```
 
-Keep README changes together with the code they describe. Review the diff, run the relevant checks, commit intended files, and push to `origin main`. Changes become online after the Pages deployment completes; files do not synchronize merely by being saved locally. Repository maintenance preferences are recorded in `AGENTS.md` for future coding sessions. Never commit credentials or force-push shared history.
+## CSV and Code Reference
 
-## Repository map
+### Reading the CSV files
 
-| Path | Purpose |
-|---|---|
-| `app.py` | Common launcher for web, desktop, Gradio and export |
-| `model_config.py` | Canonical checkpoint and export paths |
-| `docs/` | Public static web app, ONNX model and runtime |
-| `realtime_detect.py` | Original desktop robotics detector |
-| `webapp/` | Original Gradio app and standalone deployment files |
-| `scripts/export_browser_model.py` | Reproducible browser model export |
-| `tests/` | Decoder and actual model verification |
-| `Simulation.py` | Existing robot simulation |
-| `i222327_ML_FINALPROJECT.ipynb` | Existing training notebook |
-| `My Drive/ShuttleBot/` | Existing training and prediction artifacts |
-| `LEGACY-GUIDE.md` | Historical desktop/Gradio guide and project background |
+| File | Rows | Contents |
+| --- | ---: | --- |
+| [Training results](My%20Drive/ShuttleBot/runs/shuttle_train_v1/results.csv) | 50 | One row per epoch, with training and validation losses, validation scores, elapsed training time and learning rates for three parameter groups. |
+| [Desktop session](detection_log.csv) | 3,153 | One row per processed webcam frame, including the detector output and selected guidance action. |
+| [Archived desktop session](archive/original/detection_log.csv) | 1,992 | An earlier capture using the same column layout. |
+| [Evidence workbook](docs/shuttlebot-evidence.xlsx) | 8 sheets | Split audit, epoch history, milestones, saved test scores and both frame logs in filterable sheets. |
 
-Older `DEPLOY*.md`, `render.yaml` and Docker configuration describe optional legacy Python hosting. **This README is the current guide for the free GitHub Pages deployment.** The model and Ultralytics dependencies retain their applicable original licensing; ONNX Runtime's license is included in `docs/vendor/LICENSE`.
+In the training CSV, `train/*_loss` and `val/*_loss` record box localization, classification and distribution focal loss (DFL). The `metrics/*(B)` columns are bounding-box validation metrics. The `lr/pg0` through `lr/pg2` columns save optimizer learning rates. Read the metrics by epoch to trace progress, and use the workbook's peak-epoch table to compare each metric separately.
 
-## Troubleshooting
+In the desktop logs, `timestamp_s` is elapsed session time and `frame_index` starts at zero. `detected` is 0 or 1. When it is 0, center coordinates use `-1`, and confidence, offsets and normalized area are zero. Filter to detected rows when analyzing target positions or confidence. `target_cx` and `target_cy` are frame pixels, `dx` and `dy` are signed offsets from the frame center, and `norm_area` is box area divided by frame area. `fps` is the desktop loop's per-frame estimate. A row describes one frame, so repeated action labels can belong to the same continuous event.
 
-- **Camera blocked:** allow camera access in browser site settings, close other camera applications, then restart.
-- **Blank model / load error:** allow the initial model download to finish and refresh. The site must include both `docs/models/` and `docs/vendor/`.
-- **No detections:** improve lighting, bring the shuttle closer or lower the threshold. A clear view of the shuttle matters more than screen brightness.
-- **Slow browser:** close other tabs and use a faster device. Frames are processed sequentially so inference does not build a backlog.
-- **Desktop window fails:** use GUI-enabled `opencv-python` in a clean desktop virtual environment.
-- **Old website after a push:** wait for the Pages deployment to succeed, then refresh the browser.
+### Follow the code from input to output
 
-References: [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages) · [Ultralytics export](https://docs.ultralytics.com/modes/export/) · [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/)
+| File | Role in the pipeline |
+| --- | --- |
+| [Launcher](app.py) | Serves the Pages folder over localhost or dispatches to desktop, Gradio, and export entry points. |
+| [Browser controller](docs/app.js) | Starts and stops the source, reuses the WASM model session, renders overlays and handles snapshot downloads. The still-image path caches the raw output for threshold changes. |
+| [Browser decoder](docs/detection.js) | Calculates letterbox padding, builds the normalized RGB tensor, maps boxes into original frame pixels, and suppresses overlapping detections. |
+| [Desktop runner](realtime_detect.py) | Takes camera frames through Ultralytics YOLO, selects the strongest box, calculates a guidance action and writes CSV rows. Use `--log-csv` with a fresh path to preserve the saved sample log. |
+| [Export script](scripts/export_browser_model.py) | Exports the canonical checkpoint to ONNX and writes input metadata and model checksums. |
+| [Numerical parity check](tests/verify_export.py) | Reads selected saved inputs, runs the PyTorch and ONNX models, and compares raw tensors within tolerance. |
+| [Browser checks](tests/browser_review.py) | Exercises themes, responsive navigation, gallery, still-image detection and simulated camera behavior. |
+
+For local inference, start with `python app.py web` from the repo folder. The HTML file also supports a direct preview for project content, theme and gallery. The local server supplies the JavaScript modules and model files used by the detector.
+
+## Limitations
+
+Small and fast-moving shuttlecocks, clutter, lighting and motion blur can reduce confidence. Accuracy on one saved evaluation set cannot establish performance on every court or camera. WebAssembly speed depends on the device. The browser shows boxes and coordinates. Robot commands and CSV logging belong to the desktop application.
+
+## Folder Structure
+
+```text
+docs/                     Pages app, ONNX, WASM, gallery, video
+ShuttleBotRealtime/       Canonical PyTorch checkpoint
+My Drive/ShuttleBot/      Saved training and evaluation artifacts
+webapp/                   Gradio application
+scripts/                  Export, dataset preparation, figure generation
+tests/                    Decoder and model checks
+archive/                  Earlier submission variants
+```
+
+## Screenshots
+
+[1](#1-onnx-detection-on-a-test-image) · [2](#2-the-letterboxed-model-input) · [3](#3-detector-output-and-coordinates) · [4](#4-precision-and-recall) · [5](#5-mean-average-precision) · [6](#6-bounding-box-loss)
+
+[7](#7-classification-loss) · [8](#8-distribution-focal-loss) · [9](#9-training-label-distribution) · [10](#10-precision-recall-curve) · [11](#11-f1-confidence-curve) · [12](#12-precision-confidence-curve)
+
+[13](#13-normalized-confusion-matrix) · [14](#14-evaluation-confusion-counts) · [15](#15-evaluation-labels) · [16](#16-evaluation-predictions) · [17](#17-aspect-ratio-preserving-resize) · [18](#18-rgb-input-conversion)
+
+[19](#19-confidence-and-box-decoding) · [20](#20-suppressing-overlapping-candidates) · [21](#21-browser-runtime-initialization) · [22](#22-dataset-split-counts) · [23](#23-final-validation-metrics) · [24](#24-checkpoint-export-parity)
+
+### 1. ONNX detection on a test image
+
+<p align="left"><a href="docs/figures/full/01_onnx_detection_on_a_test_image.png"><img src="docs/figures/preview/01_onnx_detection_on_a_test_image.webp" width="900" alt="ONNX detection on a test image"></a></p>
+
+The original browser export predicts this box on a repository sample. The label shows its actual confidence.
+
+### 2. The letterboxed model input
+
+<p align="left"><a href="docs/figures/full/02_the_letterboxed_model_input.png"><img src="docs/figures/preview/02_the_letterboxed_model_input.webp" width="900" alt="The letterboxed model input"></a></p>
+
+The same sample is resized with its aspect ratio intact, padded to 320 × 320, then normalized for inference.
+
+### 3. Detector output and coordinates
+
+<p align="left"><a href="docs/figures/full/03_detector_output_and_coordinates.png"><img src="docs/figures/preview/03_detector_output_and_coordinates.webp" width="900" alt="Detector output and coordinates"></a></p>
+
+The highest-confidence candidate is mapped back into original image coordinates.
+
+### 4. Precision and recall
+
+<p align="left"><a href="docs/figures/full/04_precision_and_recall.png"><img src="docs/figures/preview/04_precision_and_recall.webp" width="900" alt="Precision and recall"></a></p>
+
+The original validation history records how precision and recall changed across training.
+
+### 5. Mean average precision
+
+<p align="left"><a href="docs/figures/full/05_mean_average_precision.png"><img src="docs/figures/preview/05_mean_average_precision.webp" width="900" alt="Mean average precision"></a></p>
+
+mAP at IoU 0.50 and mAP averaged across IoU 0.50 to 0.95 measure different localization strictness.
+
+### 6. Bounding box loss
+
+<p align="left"><a href="docs/figures/full/06_bounding_box_loss.png"><img src="docs/figures/preview/06_bounding_box_loss.webp" width="900" alt="Bounding box loss"></a></p>
+
+Training and validation loss from the original 50-epoch run.
+
+### 7. Classification loss
+
+<p align="left"><a href="docs/figures/full/07_classification_loss.png"><img src="docs/figures/preview/07_classification_loss.webp" width="900" alt="Classification loss"></a></p>
+
+Training and validation loss from the original 50-epoch run.
+
+### 8. Distribution focal loss
+
+<p align="left"><a href="docs/figures/full/08_distribution_focal_loss.png"><img src="docs/figures/preview/08_distribution_focal_loss.webp" width="900" alt="Distribution focal loss"></a></p>
+
+Training and validation loss from the original 50-epoch run.
+
+### 9. Training label distribution
+
+<p align="left"><a href="docs/figures/full/09_training_label_distribution.png"><img src="docs/figures/preview/09_training_label_distribution.webp" width="900" alt="Training label distribution"></a></p>
+
+Saved training-run plot showing label locations and box sizes.
+
+### 10. Precision recall curve
+
+<p align="left"><a href="docs/figures/full/10_precision_recall_curve.png"><img src="docs/figures/preview/10_precision_recall_curve.webp" width="900" alt="Precision recall curve"></a></p>
+
+Saved threshold trade-off from the CPU evaluation artifacts.
+
+### 11. F1 confidence curve
+
+<p align="left"><a href="docs/figures/full/11_f1_confidence_curve.png"><img src="docs/figures/preview/11_f1_confidence_curve.webp" width="900" alt="F1 confidence curve"></a></p>
+
+Saved evaluation curve summarizes precision and recall at different confidence thresholds.
+
+### 12. Precision confidence curve
+
+<p align="left"><a href="docs/figures/full/12_precision_confidence_curve.png"><img src="docs/figures/preview/12_precision_confidence_curve.webp" width="900" alt="Precision confidence curve"></a></p>
+
+Precision changes as low-confidence candidates are removed.
+
+### 13. Normalized confusion matrix
+
+<p align="left"><a href="docs/figures/full/13_normalized_confusion_matrix.png"><img src="docs/figures/preview/13_normalized_confusion_matrix.webp" width="900" alt="Normalized confusion matrix"></a></p>
+
+The evaluation artifact summarizes class and background results as proportions.
+
+### 14. Evaluation confusion counts
+
+<p align="left"><a href="docs/figures/full/14_evaluation_confusion_counts.png"><img src="docs/figures/preview/14_evaluation_confusion_counts.webp" width="900" alt="Evaluation confusion counts"></a></p>
+
+The raw matrix uses counts and includes the background category.
+
+### 15. Evaluation labels
+
+<p align="left"><a href="docs/figures/full/15_evaluation_labels.png"><img src="docs/figures/preview/15_evaluation_labels.webp" width="900" alt="Evaluation labels"></a></p>
+
+The saved test mosaic shows the annotated boxes used for comparison.
+
+### 16. Evaluation predictions
+
+<p align="left"><a href="docs/figures/full/16_evaluation_predictions.png"><img src="docs/figures/preview/16_evaluation_predictions.webp" width="900" alt="Evaluation predictions"></a></p>
+
+The matching evaluation mosaic shows model predictions and confidence labels.
+
+### 17. Aspect ratio preserving resize
+
+<p align="left"><a href="docs/figures/full/17_aspect_ratio_preserving_resize.png"><img src="docs/figures/preview/17_aspect_ratio_preserving_resize.webp" width="900" alt="Aspect ratio preserving resize"></a></p>
+
+The browser keeps its letterbox scale and padding for coordinate restoration.
+
+### 18. RGB input conversion
+
+<p align="left"><a href="docs/figures/full/18_rgb_input_conversion.png"><img src="docs/figures/preview/18_rgb_input_conversion.webp" width="900" alt="RGB input conversion"></a></p>
+
+The browser transforms RGBA pixels into normalized planar RGB.
+
+### 19. Confidence and box decoding
+
+<p align="left"><a href="docs/figures/full/19_confidence_and_box_decoding.png"><img src="docs/figures/preview/19_confidence_and_box_decoding.webp" width="900" alt="Confidence and box decoding"></a></p>
+
+The decoder reads the candidate score and converts model-space boxes back into frame pixels.
+
+### 20. Suppressing overlapping candidates
+
+<p align="left"><a href="docs/figures/full/20_suppressing_overlapping_candidates.png"><img src="docs/figures/preview/20_suppressing_overlapping_candidates.webp" width="900" alt="Suppressing overlapping candidates"></a></p>
+
+Candidates are ranked by confidence and compared with already selected boxes.
+
+### 21. Browser runtime initialization
+
+<p align="left"><a href="docs/figures/full/21_browser_runtime_initialization.png"><img src="docs/figures/preview/21_browser_runtime_initialization.webp" width="900" alt="Browser runtime initialization"></a></p>
+
+The live detector loads the local ONNX model and runs it with the vendored WebAssembly runtime.
+
+### 22. Dataset split counts
+
+<p align="left"><a href="docs/figures/full/22_dataset_split_counts.png"><img src="docs/figures/preview/22_dataset_split_counts.webp" width="900" alt="Dataset split counts"></a></p>
+
+Counts are taken from the preserved YOLO training archive. Each image has a corresponding text label.
+
+### 23. Final validation metrics
+
+<p align="left"><a href="docs/figures/full/23_final_validation_metrics.png"><img src="docs/figures/preview/23_final_validation_metrics.webp" width="900" alt="Final validation metrics"></a></p>
+
+Epoch 50 values are from the training validation history and are separate from local inference checks.
+
+### 24. Checkpoint export parity
+
+<p align="left"><a href="docs/figures/full/24_checkpoint_export_parity.png"><img src="docs/figures/preview/24_checkpoint_export_parity.webp" width="900" alt="Checkpoint export parity"></a></p>
+
+The verification script compares raw CPU ONNX predictions to the PyTorch checkpoint within numeric tolerance.
+
+## About the Author
+
+Mohammad Rohaan developed ShuttleBot’s vision workflow as part of a machine learning and robotics project. His work spans fine-tuning a YOLOv8n detector, examining validation and test results, and connecting detections to desktop guidance rules. The browser demo makes the same trained checkpoint accessible through an ONNX export.
+
+- **Training and evaluation** — [Colab notebook](i222327_ML_FINALPROJECT.ipynb) and [evidence workbook](docs/shuttlebot-evidence.xlsx)
+- **Browser inference and robotics integration** — [browser controller](docs/app.js) and [desktop guidance code](realtime_detect.py)
+- **Profile** — [Mohammad Rohaan on GitHub](https://github.com/rohaan2802)

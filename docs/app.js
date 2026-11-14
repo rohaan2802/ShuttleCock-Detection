@@ -5,11 +5,12 @@ const ic=input.getContext('2d',{willReadFrequently:true});
 const frame=document.createElement('canvas'), fc=frame.getContext('2d');
 const displayedFrame=document.createElement('canvas'), dc=displayedFrame.getContext('2d');
 let sessionPromise, stream, running=false, generation=0, pendingInference=Promise.resolve();
+let stillPrediction;
 let paused=false, frames=0, startedAt=0, timer, lastBoxes=[], smoothedFps=0;
 const status=text=>{if($('status').textContent!==text)$('status').textContent=text;};
 function setState(state) {
   $('camera-panel').dataset.state=state;
-  $('mode-badge').textContent={idle:'STANDBY',loading:'CONNECTING',live:'LIVE',paused:'PAUSED'}[state];
+  $('mode-badge').textContent={idle:'STANDBY',loading:'CONNECTING',live:'LIVE',image:'IMAGE',paused:'PAUSED'}[state];
 }
 function updateTime() {
   const seconds=Math.floor((performance.now()-startedAt)/1000);
@@ -53,81 +54,136 @@ function session() {
 }
 function stop(message='Camera stopped.') {
   if(startedAt){updateTime();startedAt=0;}
-  clearInterval(timer);generation++; running=false;paused=false;lastBoxes=[];
+  clearInterval(timer);generation++; running=false;paused=false;lastBoxes=[];stillPrediction=undefined;
   stream?.getTracks().forEach(track=>track.stop());stream=null;video.srcObject=null;
-  $('start').disabled=false;$('stop').disabled=true;$('camera').disabled=false;
+  $('start').disabled=false;$('sample-start').disabled=false;$('image-picker').disabled=false;$('stop').disabled=true;$('camera').disabled=false;
   $('pause').disabled=true;$('pause').textContent='Pause detection';$('pause').setAttribute('aria-pressed','false');
   $('snapshot').disabled=true;
   $('paused-overlay').hidden=true;$('grid-overlay').hidden=true;
   $('target-dot').hidden=true;$('confidence-bar').style.width='0%';$('target-state').textContent='NO TARGET';
-  $('session-note').textContent=frames?'Session ended':'Waiting to start';setState('idle');
+  $('session-note').textContent=frames?'Session ended':'Waiting to start';setState('idle');$('stop').textContent='Stop camera';
   canvas.hidden=true;$('empty').hidden=false;$('indicator').classList.remove('live');
   $('resolution').textContent='CAMERA OFF';$('count').textContent='—';$('fps').textContent='— FPS';
   $('coordinates').textContent='X — / Y —';$('match').textContent='Highest-confidence match';status(message);
 }
-async function loop(token, model) {
+function showPrediction(boxes, width, height) {
+  lastBoxes=boxes;
+  render(boxes,width,height);
+  $('count').textContent=String(boxes.length);
+  const best=boxes[0];
+  $('coordinates').textContent=best?`X ${Math.round((best.x1+best.x2)/2)} / Y ${Math.round((best.y1+best.y2)/2)}`:'X — / Y —';
+  $('match').textContent=best?`${Math.round(best.score*100)}% confidence · highest match`:'No match above threshold';
+  $('target-state').textContent=best?'TRACKING':'NO TARGET';
+  $('confidence-bar').style.width=best?`${best.score*100}%`:'0%';
+  $('target-dot').hidden=!best;
+  if(best){
+    $('target-dot').style.left=`${(best.x1+best.x2)/2/width*100}%`;
+    $('target-dot').style.top=`${(best.y1+best.y2)/2/height*100}%`;
+  }
+}
+function updateStill() {
+  const { data, dims, transform } = stillPrediction;
+  const boxes=decode(data,dims,transform,Number($('confidence').value)/100);
+  showPrediction(boxes,transform.width,transform.height);
+  status(boxes.length?'Shuttlecock detected in image.':'No shuttlecock detected at this threshold.');
+}
+async function loop(token, model, sample) {
   if(!running || token!==generation)return;
-  if(paused){requestAnimationFrame(()=>loop(token,model));return;}
+  if(paused){requestAnimationFrame(()=>loop(token,model,sample));return;}
   try {
-    if(video.readyState<2){requestAnimationFrame(()=>loop(token,model));return;}
-    const started=performance.now(),w=video.videoWidth,h=video.videoHeight,t=letterbox(w,h);
+    if(!sample && video.readyState<2){requestAnimationFrame(()=>loop(token,model,sample));return;}
+    const started=performance.now(),w=sample?sample.naturalWidth:video.videoWidth,h=sample?sample.naturalHeight:video.videoHeight,t=letterbox(w,h);
     if(frame.width!==w || frame.height!==h){frame.width=canvas.width=w;frame.height=canvas.height=h;}
-    fc.drawImage(video,0,0,w,h);
+    fc.drawImage(sample||video,0,0,w,h);
     ic.fillStyle='rgb(114,114,114)';ic.fillRect(0,0,320,320);ic.drawImage(frame,0,0,w,h,t.left,t.top,t.w,t.h);
     const tensor=new ort.Tensor('float32',rgbTensor(ic.getImageData(0,0,320,320).data),[1,3,320,320]);
     let output;
     try { pendingInference=model.run({[model.inputNames[0]]:tensor});output=await pendingInference; } finally {tensor.dispose();}
-    let boxes;
-    try {const raw=output[model.outputNames[0]];boxes=decode(raw.data,raw.dims,t,Number($('confidence').value)/100);}
-    finally {Object.values(output).forEach(value=>value.dispose());}
-    if(!running || token!==generation)return;
-    if(paused){requestAnimationFrame(()=>loop(token,model));return;}
-    if(displayedFrame.width!==w || displayedFrame.height!==h){displayedFrame.width=w;displayedFrame.height=h;}
-    dc.drawImage(frame,0,0);lastBoxes=boxes;render(boxes,w,h);
-    frames++;$('frames').textContent=frames.toLocaleString();
-    const fps=1000/(performance.now()-started);smoothedFps=smoothedFps?smoothedFps*.8+fps*.2:fps;
-    $('count').textContent=String(boxes.length);$('fps').textContent=`${smoothedFps.toFixed(1)} FPS`;
-    const best=boxes[0];$('coordinates').textContent=best?`X ${Math.round((best.x1+best.x2)/2)} / Y ${Math.round((best.y1+best.y2)/2)}`:'X — / Y —';
-    $('match').textContent=best?`${Math.round(best.score*100)}% confidence · highest match`:'Waiting for a shuttlecock';
-    $('target-state').textContent=best?'TRACKING':'NO TARGET';$('confidence-bar').style.width=best?`${best.score*100}%`:'0%';
-    $('target-dot').hidden=!best;
-    if(best){$('target-dot').style.left=`${(best.x1+best.x2)/2/w*100}%`;$('target-dot').style.top=`${(best.y1+best.y2)/2/h*100}%`;}
-    status(best?'Shuttlecock detected.':'No shuttlecock detected. Camera is still running.');
-    requestAnimationFrame(()=>loop(token,model));
-  } catch(error){if(token===generation){console.error(error);stop('Detection failed. Please restart the camera.');}}
+    try {
+      if(!running || token!==generation)return;
+      if(paused){requestAnimationFrame(()=>loop(token,model,sample));return;}
+      const raw=output[model.outputNames[0]];
+      if(displayedFrame.width!==w || displayedFrame.height!==h){displayedFrame.width=w;displayedFrame.height=h;}
+      dc.drawImage(frame,0,0);
+      frames++;$('frames').textContent=frames.toLocaleString();
+      $('snapshot').disabled=false;
+      if(sample){
+        stillPrediction={data:raw.data.slice(),dims:[...raw.dims],transform:t};
+        $('fps').textContent=`${Math.round(performance.now()-started)} ms`;
+        updateStill();
+        return;
+      }
+      const boxes=decode(raw.data,raw.dims,t,Number($('confidence').value)/100);
+      showPrediction(boxes,w,h);
+      const fps=1000/(performance.now()-started);
+      smoothedFps=smoothedFps?smoothedFps*.8+fps*.2:fps;
+      $('fps').textContent=`${smoothedFps.toFixed(1)} FPS`;
+      status(boxes.length?'Shuttlecock detected.':'No shuttlecock detected. Camera is still running.');
+      requestAnimationFrame(()=>loop(token,model,sample));
+    } finally {Object.values(output).forEach(value=>value.dispose());}
+  } catch(error){if(token===generation){console.error(error);stop('Detection failed. Try starting the detector again.');}}
 }
-$('start').addEventListener('click',async()=>{
-  const token=++generation;$('start').disabled=true;$('stop').disabled=false;$('camera').disabled=true;
+async function start(sample = false) {
+  const token=++generation;$('start').disabled=true;$('sample-start').disabled=true;$('image-picker').disabled=true;$('stop').disabled=false;$('camera').disabled=true;
   setState('loading');
   try {
-    if(!navigator.mediaDevices?.getUserMedia)throw new Error('Camera requires HTTPS or localhost in a supported browser.');
-    status('Allow camera access to continue…');
-    const choice=$('camera').value,source=choice.startsWith('device:')?{deviceId:{exact:choice.slice(7)}}:{facingMode:{ideal:choice}};
-    const acquired=await navigator.mediaDevices.getUserMedia({video:{...source,width:{ideal:640},height:{ideal:480}},audio:false});
-    if(token!==generation){acquired.getTracks().forEach(t=>t.stop());return;}
-    stream=acquired;video.srcObject=stream;await video.play();
-    // Camera names become available only after permission is granted.
-    navigator.mediaDevices.enumerateDevices().then(devices=>{
+    if(sample){
+      status('Loading saved test image…');
+      const image=new Image();
+      const localFile=sample instanceof File;
+      const url=localFile?URL.createObjectURL(sample):'./samples/test-shuttle.jpg';
+      try {
+        image.src=url;
+        await image.decode();
+      } catch {
+        throw new Error('Could not open that image. Choose a JPEG, PNG, or WebP file.');
+      } finally {
+        if(localFile)URL.revokeObjectURL(url);
+      }
       if(token!==generation)return;
-      $('camera').querySelectorAll('option[data-device]').forEach(option=>option.remove());
-      devices.filter(device=>device.kind==='videoinput' && device.deviceId).forEach((device,index)=>{
-        const option=new Option(device.label||`Camera ${index+1}`,`device:${device.deviceId}`);option.dataset.device='true';$('camera').add(option);
-      });
-      const deviceId=acquired.getVideoTracks()[0].getSettings().deviceId;
-      if(deviceId && [...$('camera').options].some(option=>option.value===`device:${deviceId}`))$('camera').value=`device:${deviceId}`;
-    }).catch(()=>{});
-    stream.getVideoTracks()[0].addEventListener('ended',()=>{if(token===generation)stop('Camera disconnected. Please restart.');});
+      sample=image;
+    }else{
+      if(!navigator.mediaDevices?.getUserMedia)throw new Error('Camera requires HTTPS or localhost in a supported browser.');
+      status('Allow camera access to continue…');
+      const choice=$('camera').value,source=choice.startsWith('device:')?{deviceId:{exact:choice.slice(7)}}:{facingMode:{ideal:choice}};
+      const acquired=await navigator.mediaDevices.getUserMedia({video:{...source,width:{ideal:640},height:{ideal:480}},audio:false});
+      if(token!==generation){acquired.getTracks().forEach(t=>t.stop());return;}
+      stream=acquired;video.srcObject=stream;await video.play();
+      // Camera names become available only after permission is granted.
+      navigator.mediaDevices.enumerateDevices().then(devices=>{
+        if(token!==generation)return;
+        $('camera').querySelectorAll('option[data-device]').forEach(option=>option.remove());
+        devices.filter(device=>device.kind==='videoinput' && device.deviceId).forEach((device,index)=>{
+          const option=new Option(device.label||`Camera ${index+1}`,`device:${device.deviceId}`);option.dataset.device='true';$('camera').add(option);
+        });
+        const deviceId=acquired.getVideoTracks()[0].getSettings().deviceId;
+        if(deviceId && [...$('camera').options].some(option=>option.value===`device:${deviceId}`))$('camera').value=`device:${deviceId}`;
+      }).catch(()=>{});
+      stream.getVideoTracks()[0].addEventListener('ended',()=>{if(token===generation)stop('Camera disconnected. Please restart.');});
+    }
     status('Loading detector for the first frame…');const model=await session();
     await pendingInference.catch(()=>{});
     if(token!==generation)return;
-    running=true;canvas.hidden=false;$('empty').hidden=true;$('indicator').classList.add('live');$('resolution').textContent=`${video.videoWidth} × ${video.videoHeight}`;
+    running=true;canvas.hidden=false;$('empty').hidden=true;$('indicator').classList.add('live');$('resolution').textContent=`${sample?sample.naturalWidth:video.videoWidth} × ${sample?sample.naturalHeight:video.videoHeight}`;
     paused=false;frames=0;smoothedFps=0;lastBoxes=[];startedAt=performance.now();$('frames').textContent='0';$('elapsed').textContent='00:00';
-    timer=setInterval(updateTime,1000);$('session-note').textContent='Camera active';$('pause').disabled=false;setState('live');syncPreferences();
-    $('snapshot').disabled=false;
-    loop(token,model);
+    if(!sample)timer=setInterval(updateTime,1000);
+    $('session-note').textContent=sample?'Still image':'Camera active';
+    $('pause').disabled=Boolean(sample);
+    $('stop').textContent=sample?'Clear image':'Stop camera';
+    setState(sample?'image':'live');syncPreferences();
+    loop(token,model,sample);
   } catch(error){if(token===generation){console.error(error);stop(error.name==='NotAllowedError'?'Camera access denied. Allow it in browser settings, then retry.':error.name==='NotFoundError'?'No camera found. Connect a camera and try again.':error.name==='NotReadableError'?'Camera is busy. Close other camera apps and retry.':error.message);}}
+}
+$('start').addEventListener('click',()=>start());
+$('sample-start').addEventListener('click',()=>start(true));
+$('image-picker').addEventListener('change',event=>{
+  const file=event.target.files[0];
+  event.target.value='';
+  if(!file)return;
+  if(file.size>20*1024*1024){status('Choose an image under 20 MB.');return;}
+  start(file);
 });
-$('stop').addEventListener('click',()=>stop());
+$('stop').addEventListener('click',()=>stop(stream?'Camera stopped.':'Image cleared.'));
 $('snapshot').addEventListener('click',()=>{
   if(!running || !displayedFrame.width)return;
   const link=document.createElement('a');link.download=`shuttlebot-${new Date().toISOString().replace(/[:.]/g,'-')}.png`;
@@ -147,6 +203,7 @@ $('pause').addEventListener('click',()=>{
 });
 for(const id of ['confidence','grid','mirror'])$(id).addEventListener(id==='confidence'?'input':'change',()=>{
   syncPreferences();savePreferences();
+  if(id==='confidence' && stillPrediction)updateStill();
   if(id==='mirror' && running && frames)render(lastBoxes,displayedFrame.width,displayedFrame.height);
 });
 function syncFullscreen() {
@@ -164,10 +221,10 @@ $('fullscreen').addEventListener('click',async()=>{
 document.addEventListener('fullscreenchange',syncFullscreen);
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape' && $('camera-panel').classList.contains('expanded')){$('camera-panel').classList.remove('expanded');document.body.classList.remove('expanded-view');syncFullscreen();}
-  if(event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.target.closest('input,select,button,summary,a,[contenteditable]'))return;
+  if(document.querySelector("#project-viewer[open]") || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.target.closest('input,select,button,summary,a,[contenteditable]'))return;
   if(event.code==='Space'){event.preventDefault();($('stop').disabled?$('start'):$('stop')).click();}
   if(event.key.toLowerCase()==='p')$('pause').click();
   if(event.key.toLowerCase()==='f')$('fullscreen').click();
 });
 window.addEventListener('pagehide',()=>stop());
-document.addEventListener('visibilitychange',()=>{if(document.hidden && (running || stream))stop('Camera paused while this tab is hidden. Restart when ready.');});
+document.addEventListener('visibilitychange',()=>{if(document.hidden && (running || stream))stop('Detection stopped while this tab was hidden. Restart when ready.');});

@@ -4,17 +4,17 @@
 <meta name="description" content="ShuttleBot live shuttlecock detector. Private, on-device camera detection for badminton robotics.">
 <meta name="theme-color" content="#090d14"><title>ShuttleBot · Vision studio</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090d14'/%3E%3Cpath d='M9 23L23 9M10 9h13v13' stroke='%235eead4' stroke-width='3' fill='none'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="enhancements.css"></head><body>
+<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="enhancements.css"><link rel="stylesheet" href="project.css"></head><body id="page-top">
 <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
 <symbol id="i-camera" viewBox="0 0 24 24"><path d="M8 5l2-2h4l2 2h4v15H4V5z"/><circle cx="12" cy="12" r="4"/></symbol>
 <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></symbol>
 <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 19L19 5M5 5h14v14"/></symbol>
 <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4-4 7-8 9-4-2-8-5-8-9V6zM8 12l3 3 5-6"/></symbol>
 </defs></svg>
-<header class="topbar"><a class="brand" href="./"><span class="brand-icon"><svg><use href="#i-arrow"/></svg></span>ShuttleBot<span class="badge">VISION STUDIO</span></a><div class="header-right"><span class="private-pill"><i></i> On-device AI</span><a class="source" href="https://github.com/rohaan2802/ShuttleCock-Detection">Project guide <svg><use href="#i-arrow"/></svg></a></div></header>
+<header class="topbar"><a class="brand" href="#page-top"><span class="brand-icon"><svg><use href="#i-arrow"/></svg></span>ShuttleBot<span class="badge">VISION STUDIO</span></a><button class="project-icon" id="project-menu" type="button" aria-label="Navigation menu" aria-controls="project-navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><nav class="project-nav" id="project-navigation" aria-label="Primary"><a href="#detector">Detector</a><a href="#overview">Overview</a><a href="#project-breakdown">Methods</a><a href="#dataset">Dataset</a><a href="#setup">Setup</a><a href="#results">Results</a><a href="#simulation">Video</a><a href="#evidence">Evidence</a><a href="#gallery">Gallery</a><a href="#links">Links</a><a href="#about-the-author">Author</a></nav><button class="project-icon" type="button" id="project-theme" aria-label="Switch to light theme" title="Switch to light theme"><span class="project-sun"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/></svg></span><span class="project-moon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 13A9 9 0 0 1 11 3a9 9 0 1 0 10 10Z"/></svg></span></button></header>
 <main>
-<section class="intro"><div><p class="eyebrow"><span></span> SHUTTLECOCK DETECTION</p><h1>See the game.<span> Find the target.</span></h1><p class="subtitle">Your camera. Your court. Real-time vision, right in your browser.</p></div><div class="privacy"><svg><use href="#i-shield"/></svg><div>Private by design<small>Your camera feed never leaves this device.</small></div></div></section>
-<section class="workspace" aria-label="Live detector">
+<section class="intro"><div><p class="eyebrow"><span></span> SHUTTLECOCK DETECTION</p><h1>Shuttlecock Detection</h1><p class="subtitle">Run YOLOv8n on your camera, the bundled test frame, or an image from your device.</p></div><div class="privacy"><svg><use href="#i-shield"/></svg><div>Private by design<small>Your camera feed never leaves this device.</small></div></div></section>
+<section id="detector" class="workspace" aria-label="Live detector">
 <div class="camera-panel" id="camera-panel">
 <div class="panel-top"><div class="feed-title"><i id="indicator"></i><span>Live view</span><span id="mode-badge" class="mode-badge">STANDBY</span></div><div class="feed-tools"><span id="resolution">CAMERA OFF</span><button id="fullscreen" class="icon-button" title="Fullscreen view" aria-label="Fullscreen view"><svg><use href="#i-expand"/></svg></button></div></div>
 <div class="stage" id="stage"><video id="video" autoplay playsinline muted hidden></video><canvas id="view" hidden aria-label="Camera image with shuttlecock detection boxes"></canvas><div id="grid-overlay" hidden aria-hidden="true"></div><div id="paused-overlay" hidden><span>DETECTION PAUSED</span><small>Resume to continue tracking</small></div><div id="empty"><div class="scope"><span></span><svg><use href="#i-camera"/></svg></div><h2>Your next target starts here.</h2><p>Point your camera at a shuttlecock.<br>We’ll take care of the coordinates.</p><div class="empty-tags"><span>Live bounding boxes</span><span>Instant coordinates</span></div></div></div>
@@ -24,11 +24,371 @@
 <div class="section-heading"><h2>Control room</h2><span>01 / LIVE</span></div>
 <label for="camera">Camera source</label><select id="camera"><option value="environment">Rear / default camera</option><option value="user">Front camera</option></select>
 <button id="start" class="primary"><svg><use href="#i-camera"/></svg> Start camera <kbd>SPACE</kbd></button><div class="button-row"><button id="pause" disabled aria-pressed="false">Pause detection</button><button id="stop" disabled><span class="stop-square"></span> Stop camera</button></div><div class="utility-row"><button id="snapshot" disabled>↘ Save snapshot</button><button id="reset">↺ Reset session</button></div>
-<div class="sensitivity"><label for="confidence">Confidence threshold <output id="confidence-value">35%</output></label><input id="confidence" type="range" min="10" max="90" value="35"><div class="range-labels"><span>More matches</span><span>Stronger matches</span></div></div>
+<button id="sample-start" type="button">Try test image</button>
+<label class="image-control" for="image-picker">Choose a local image
+  <input id="image-picker" type="file" accept="image/jpeg,image/png,image/webp">
+  <small>JPEG, PNG or WebP · up to 20 MB · processed on this device</small>
+</label><div class="sensitivity"><label for="confidence">Confidence threshold <output id="confidence-value">35%</output></label><input id="confidence" type="range" min="10" max="90" value="35"><div class="range-labels"><span>More matches</span><span>Stronger matches</span></div></div>
 <div class="view-options"><label class="toggle"><span>Center guides<small>Line up your target</small></span><input id="grid" type="checkbox"><span class="switch" aria-hidden="true"></span></label><label class="toggle"><span>Mirror preview<small>Coordinates stay camera-relative</small></span><input id="mirror" type="checkbox"><span class="switch" aria-hidden="true"></span></label></div>
 <div class="target-card"><div class="target-header"><span>TARGET POSITION</span><span id="target-state">NO TARGET</span></div><div class="target-content"><div><strong id="coordinates">X — <em>/</em> Y —</strong><small id="match">Highest-confidence match</small></div><div class="position-map" aria-label="Target position in camera frame"><div id="target-dot" hidden></div></div></div><div class="confidence-track"><span id="confidence-bar"></span></div></div>
 <details class="tips"><summary>Tips for a better detection <span>+</span></summary><p>Use even lighting and keep the shuttlecock clearly in view. Lower the threshold for small targets; raise it to reduce false matches.</p><p><kbd>Space</kbd> start / stop · <kbd>P</kbd> pause / resume · <kbd>F</kbd> fullscreen. Shortcuts are inactive while editing controls.</p></details>
 </aside></section>
 <section class="metrics" aria-label="Session statistics"><article><div class="metric-top"><span>IN FRAME</span><span class="metric-icon">◎</span></div><strong id="count">—</strong><small>Shuttlecocks detected</small></article><article><div class="metric-top"><span>DETECTION SPEED</span><span class="metric-icon">ϟ</span></div><strong id="fps">— FPS</strong><small>Live processing rate</small></article><article><div class="metric-top"><span>FRAMES ANALYZED</span><span class="metric-icon">▥</span></div><strong id="frames">0</strong><small>This camera session</small></article><article><div class="metric-top"><span>SESSION TIME</span><span class="metric-icon">◷</span></div><strong id="elapsed">00:00</strong><small id="session-note">Waiting to start</small></article></section>
-<footer><span><span class="footer-dot"></span> Built for ShuttleBot <span class="footer-divider">/</span> Mohammad Rohaan · i222327</span><span>Free to use. Made to explore.</span></footer>
-</main><script src="screenshot-mode.js"></script><script src="vendor/ort.min.js"></script><script type="module" src="app.js"></script></body></html>
+<section class="project-section" id="links"><h2>Live Links</h2>
+<div class="project-scroll" id="live-links" tabindex="0"><table><thead><tr><th scope="col">What</th><th scope="col">Link</th></tr></thead><tbody><tr><td>Repository</td><td><a href="https://github.com/rohaan2802/ShuttleCock-Detection">https://github.com/rohaan2802/ShuttleCock-Detection</a></td></tr>
+<tr><td>GitHub Pages</td><td><a href="https://rohaan2802.github.io/ShuttleCock-Detection/">https://rohaan2802.github.io/ShuttleCock-Detection/</a></td></tr>
+<tr><td>Dataset reference</td><td><a href="https://www.kaggle.com/datasets/ayushsinha731/shuttle-badminton-photos">https://www.kaggle.com/datasets/ayushsinha731/shuttle-badminton-photos</a></td></tr></tbody></table></div><input class="project-slider" type="range" aria-label="Scroll live links horizontally" aria-controls="live-links" hidden><div class="project-actions"><a href="models/shuttle.json" download>Download model metadata</a><a href="videos/simulation-demo.mp4" download>Download simulation</a></div><h3>Contents</h3><div class="project-actions"><a href="#overview">Overview</a><a href="#whats-inside">What’s Inside</a><a href="#project-breakdown">Project Breakdown</a><a href="#dataset">Dataset</a><a href="#setup">Setup</a><a href="#results">Results</a><a href="#evidence">Evidence</a><a href="#csv-and-code-reference">CSV and Code</a><a href="#limitations">Limitations</a><a href="#about-the-author">About the Author</a><a href="#folder-structure">Folder Structure</a><a href="#gallery">Gallery</a></div></section>
+<section class="project-section" id="overview"><h2>Overview</h2>
+<p>A single-class YOLOv8n model locates badminton shuttlecocks for the ShuttleBot robotics project. The browser loads its ONNX export and WebAssembly runtime from this site. Live camera frames and the bundled test image are processed on the device, and the camera starts only on request.</p></section>
+<section class="project-section" id="whats-inside"><h2>What’s Inside</h2>
+<p>The browser detector is in docs/. The desktop runner adds robot guidance and CSV logging. The Gradio app runs inference in Python. Training artifacts, the original reports and the simulation video document the wider project.</p><div class="project-scroll" id="project-files" tabindex="0"><table><thead><tr><th scope="col">File</th><th scope="col">Purpose</th></tr></thead><tbody><tr><td><a href="index.html">index.html</a></td><td>Browser entry point</td></tr>
+<tr><td><a href="app.js">app.js</a></td><td>Camera and still-image inference</td></tr>
+<tr><td><a href="detection.js">detection.js</a></td><td>Box decoding and overlap suppression</td></tr>
+<tr><td><a href="models/shuttle.onnx">models/shuttle.onnx</a></td><td>Browser checkpoint</td></tr>
+<tr><td><a href="videos/simulation-demo.mp4">videos/simulation-demo.mp4</a></td><td>Saved simulation</td></tr></tbody></table></div><input class="project-slider" type="range" aria-label="Scroll project files horizontally" aria-controls="project-files" hidden></section>
+<section class="project-section" id="project-breakdown"><h2>Project Breakdown</h2>
+<h3>From frame to bounding box</h3>
+<p>The camera frame is resized with preserved aspect ratio into a padded 320 × 320 RGB tensor. The model produces 2,100 candidates. The decoder filters by confidence, suppresses overlapping detections, and maps the boxes back to the original frame. The UI shows the highest-confidence target center in camera pixels. The original training run used 640-pixel inputs for 50 epochs.</p>
+<h3>Three ways to inspect a detection</h3>
+<p>Live camera mode continuously analyzes frames. Try test image uses a saved frame from the project. Choose a local image opens a file on your device. In still-image mode, moving the confidence slider updates the boxes using the saved model output. It takes one model pass per image.</p>
+<p>The target center is reported in original image pixels, measured from the upper-left corner. Mirroring changes the preview while the coordinates remain tied to the source image. Save snapshot downloads the current annotated view.</p>
+<div class="project-actions"><a href="app.js" download>Download browser controller</a><a href="detection.js" download>Download box decoder</a><a href="models/shuttle.json" download>Download model metadata</a></div></section>
+<section class="project-section" id="dataset"><h2>Dataset</h2>
+<p>The preserved YOLO archive contains 14,991 images and matching label files: 10,816 training, 2,666 validation, and 1,509 test images. The dataset is packaged as two release files under 2 GB each. The reconstruction script checks the original ZIP checksum before extraction. Its original configuration contains a Kaggle path, so use the extraction helper for a portable local configuration.</p><h3 id="reassemble-dataset">Reassemble the dataset ZIP</h3>
+<ol>
+<li>Download <code>ShuttleCock_YOLO_Dataset.zip.part01</code> and <code>ShuttleCock_YOLO_Dataset.zip.part02</code>. Put both in <code>ShuttleCock-Detection_Release</code>, next to the cloned repo.</li>
+<li>Open PowerShell in the <code>ShuttleCock-Detection</code> repo and run:
+<div class="project-scroll" id="dataset-join-command" tabindex="0"><pre><code>python scripts/join_dataset.py ../ShuttleCock-Detection_Release ../ShuttleCock_YOLO_Dataset.zip</code></pre></div><input type="range" class="project-slider" aria-controls="dataset-join-command" aria-label="Scroll command horizontally" hidden></li>
+<li>Wait for <strong>Verified dataset ZIP</strong>. The script joins the parts in order, verifies the original SHA-256, and saves the complete ZIP next to the repo.</li>
+<li>Extract the ZIP normally. For training, this command also creates a portable <code>data_local.yaml</code>:
+<div class="project-scroll" id="dataset-extract-command" tabindex="0"><pre><code>python scripts/prepare_dataset.py ../ShuttleCock_YOLO_Dataset.zip ../ShuttleCock_YOLO_Dataset</code></pre></div><input type="range" class="project-slider" aria-controls="dataset-extract-command" aria-label="Scroll command horizontally" hidden></li>
+</ol>
+<div class="project-actions"><a href="dataset-reassembly.txt" download>Download plain-text instructions</a></div>
+</section>
+<section class="project-section" id="setup"><h2>Setup</h2>
+<p>Run the web launcher from the repository root and open localhost. Choose Start camera or Try test image for camera-free inference. The browser app requires JavaScript and WebAssembly, and camera access requires HTTPS or localhost.</p><div class="project-scroll" id="launcher-commands" tabindex="0"><pre><code>python app.py web --no-browser
+# Open http://localhost:8000
+npm test</code></pre></div><input class="project-slider" type="range" aria-label="Scroll launcher commands horizontally" aria-controls="launcher-commands" hidden></section>
+<section class="project-section" id="results"><h2>Results</h2>
+<div class="project-scroll" id="saved-metrics" tabindex="0" role="region" aria-label="Saved validation results"><table><thead><tr><th scope="col">Precision</th><th scope="col">Recall</th><th scope="col">mAP50</th><th scope="col">mAP50–95</th></tr></thead><tbody><tr><td>0.74647</td><td>0.60796</td><td>0.64776</td><td>0.29328</td></tr></tbody></table></div>
+<input class="project-slider" type="range" aria-label="Scroll saved validation results" aria-controls="saved-metrics" hidden>
+<p>The original epoch-50 validation history records precision 0.74647, recall 0.60796, mAP50 0.64776, and mAP50–95 0.29328. These saved scores describe the training run. The ONNX export was checked against PyTorch on three repository images, with maximum absolute raw-tensor difference 0.00048828125. The still-image demo runs the same browser model as the live camera.</p></section>
+<section class="project-section" id="simulation">
+<h2>ShuttleBot Simulation</h2>
+<p>Watch the saved robot scenario for the proposed search, approach and collection sequence. The video documents the simulated workflow. Use the detector above to inspect real model output on a camera frame or still image.</p>
+<video class="simulation-player" width="960" height="522" style="--video-ratio:960 / 522" controls playsinline preload="auto" poster="videos/simulation-demo-poster.png" src="videos/simulation-demo.mp4" aria-label="Saved ShuttleBot simulation"><a href="videos/simulation-demo.mp4">Open simulation MP4</a></video>
+<div class="project-actions"><a href="videos/simulation-demo.mp4" download>Download MP4</a><a href="#detector">Try the detector</a></div></section>
+<section class="project-section" id="evidence">
+<h2>Project Evidence</h2>
+<h3>Review the pipeline</h3>
+<ol><li>Open the bundled test image and note the predicted box, score and center.</li><li>Raise the confidence cutoff to see when that detection is removed. The browser updates the overlay from cached predictions.</li><li>Open the workbook to compare the saved epoch results with the separate held-out test and desktop logs.</li></ol>
+<p><a href="shuttlebot-evidence.xlsx" download>Download the Excel workbook</a> for all 50 training epochs, validation milestones, annotation counts, and both desktop frame logs. The workbook includes filters and charts. The original <a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/My%20Drive/ShuttleBot/runs/shuttle_train_v1/results.csv">epoch CSV</a> and <a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/detection_log.csv">desktop CSV</a> remain available for inspection.</p>
+<h3>Dataset and annotation audit</h3>
+<p>The YOLO ZIP contains one class, <code>0 = shuttle</code>. Each image has a matching text file. A populated row stores class, center x, center y, width and height in normalized coordinates. Empty files contribute zero annotated boxes.</p>
+<div class="project-scroll" id="evidence-table-1" tabindex="0" role="region" aria-label="Evidence table 1"><table>
+<thead>
+<tr>
+<th scope="col">Split</th>
+<th scope="col" style="text-align:right">Images / label files</th>
+<th scope="col" style="text-align:right">Empty labels</th>
+<th scope="col" style="text-align:right">Annotated boxes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Train</td>
+<td style="text-align:right">10,816</td>
+<td style="text-align:right">385</td>
+<td style="text-align:right">10,680</td>
+</tr>
+<tr>
+<td>Validation</td>
+<td style="text-align:right">2,666</td>
+<td style="text-align:right">96</td>
+<td style="text-align:right">2,612</td>
+</tr>
+<tr>
+<td>Test</td>
+<td style="text-align:right">1,509</td>
+<td style="text-align:right">53</td>
+<td style="text-align:right">1,493</td>
+</tr>
+<tr>
+<td>Total</td>
+<td style="text-align:right">14,991</td>
+<td style="text-align:right">534</td>
+<td style="text-align:right">14,785</td>
+</tr>
+</tbody>
+</table></div><input class="project-slider" type="range" aria-controls="evidence-table-1" aria-label="Scroll evidence table 1 horizontally" hidden>
+<p>The archive does not establish whether related frames from the same recording were grouped when splitting the data. See the <a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/archive/README.md#dataset">dataset audit</a> for the ZIP checksum and portable extraction commands.</p>
+<h3>Training, test results and model export</h3>
+<p>The recorded run fine-tuned pretrained YOLOv8n for 50 epochs with input size 640, batch size 16, seed 0 and automatic optimizer selection. The browser model uses an RGB input tensor of shape <code>[1, 3, 320, 320]</code>. Its output shape is <code>[1, 5, 2100]</code>, containing four box values and one class score per candidate. The browser reverses letterbox padding and scaling, clips boxes to the frame, and applies non-max suppression at IoU 0.50. The default confidence threshold is 0.35.</p>
+<div class="project-scroll" id="evidence-table-2" tabindex="0" role="region" aria-label="Evidence table 2"><table>
+<thead>
+<tr>
+<th scope="col">Validation metric</th>
+<th scope="col" style="text-align:right">Epoch 1</th>
+<th scope="col" style="text-align:right">Epoch 50</th>
+<th scope="col">Recorded peak</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Precision</td>
+<td style="text-align:right">0.39654</td>
+<td style="text-align:right">0.74647</td>
+<td>0.76121 at epoch 44</td>
+</tr>
+<tr>
+<td>Recall</td>
+<td style="text-align:right">0.18951</td>
+<td style="text-align:right">0.60796</td>
+<td>0.60796 at epoch 50</td>
+</tr>
+<tr>
+<td>mAP50</td>
+<td style="text-align:right">0.15138</td>
+<td style="text-align:right">0.64776</td>
+<td>0.64803 at epoch 49</td>
+</tr>
+<tr>
+<td>mAP50–95</td>
+<td style="text-align:right">0.05306</td>
+<td style="text-align:right">0.29328</td>
+<td>0.29328 at epoch 50</td>
+</tr>
+</tbody>
+</table></div><input class="project-slider" type="range" aria-controls="evidence-table-2" aria-label="Scroll evidence table 2 horizontally" hidden>
+<p>The notebook's saved test evaluation reports <strong>0.829 precision, 0.624 recall, 0.708 mAP50 and 0.358 mAP50–95</strong> across <strong>1,509 images and 1,493 annotated instances</strong>. These scores belong to that saved test run. The browser parity checks used selected images, so full browser-resolution test-set accuracy remains unmeasured.</p>
+<h3>Desktop guidance and saved frame logs</h3>
+<p>The desktop runner picks the highest-confidence detection and computes the center, signed pixel offset from frame center and normalized bounding-box area. It defaults to confidence 0.35, overlap threshold 0.50, input size 640, horizontal tolerance 40 px and pick area threshold 0.08.</p>
+<div class="project-scroll" id="evidence-table-3" tabindex="0" role="region" aria-label="Evidence table 3"><table>
+<thead>
+<tr>
+<th scope="col">Decision</th>
+<th scope="col">Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SEARCH</td>
+<td>No box passes the detector threshold.</td>
+</tr>
+<tr>
+<td>PICK</td>
+<td>The selected box covers at least 8% of the frame and is within 40 px of horizontal center.</td>
+</tr>
+<tr>
+<td>TURN_LEFT / TURN_RIGHT</td>
+<td>The selected box center falls outside the horizontal tolerance.</td>
+</tr>
+<tr>
+<td>FORWARD</td>
+<td>The box is centered and below the pick area threshold.</td>
+</tr>
+</tbody>
+</table></div><input class="project-slider" type="range" aria-controls="evidence-table-3" aria-label="Scroll evidence table 3 horizontally" hidden>
+<h4 class="saved-session-heading">Saved session comparison</h4>
+<div class="project-scroll" id="evidence-table-4" tabindex="0" role="region" aria-label="Evidence table 4"><table>
+<thead>
+<tr>
+<th scope="col">Saved session</th>
+<th scope="col" style="text-align:right">Rows</th>
+<th scope="col" style="text-align:right">Detected rows</th>
+<th scope="col" style="text-align:right">Median FPS</th>
+<th scope="col">SEARCH / LEFT / RIGHT / FORWARD / PICK</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Repository log</td>
+<td style="text-align:right">3,153</td>
+<td style="text-align:right">56</td>
+<td style="text-align:right">5.30</td>
+<td>3,097 / 27 / 19 / 9 / 1</td>
+</tr>
+<tr>
+<td>Archived log</td>
+<td style="text-align:right">1,992</td>
+<td style="text-align:right">950</td>
+<td style="text-align:right">5.50</td>
+<td>1,042 / 344 / 342 / 222 / 42</td>
+</tr>
+</tbody>
+</table></div><input class="project-slider" type="range" aria-controls="evidence-table-4" aria-label="Scroll evidence table 4 horizontally" hidden>
+<p>The logs store elapsed time, frame index, action, confidence, center pixels, signed offsets, normalized area and instantaneous FPS. They lack frame-by-frame ground truth and matched recording conditions, so detection counts describe the individual sessions. PICK records a software decision. The chassis, Raspberry Pi, camera and servo mechanism are described in the design report, and physical actuation remains unverified.</p>
+<h3>Reports, simulation and implementation</h3>
+<div class="project-scroll" id="evidence-table-5" tabindex="0" role="region" aria-label="Evidence table 5"><table>
+<thead>
+<tr>
+<th scope="col">Evidence</th>
+<th scope="col">What it covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/Shuttle%20Bot%20Design%20Report.pdf">Robot design report</a></td>
+<td>Proposed chassis, power, camera, Raspberry Pi and servo-based collection.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/Shuttle%20Bot%20ML%20Design.pdf">ML design notes</a></td>
+<td>Detection task, model options, proposed data acquisition and camera integration.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/slides.pdf">Project slides</a></td>
+<td>Dataset, preprocessing, training and evaluation summary.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/i222327_ML_FINALPROJECT.ipynb">Training notebook</a></td>
+<td>Colab training, checkpoint selection, test metrics and prediction workflow.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/i222327_ML_FINALPROJECT.ipynb%20-%20Colab.pdf">Colab PDF</a></td>
+<td>Readable export of the notebook.</td>
+</tr>
+<tr>
+<td><a href="videos/simulation-demo.mp4">Simulation video</a></td>
+<td>Recorded demonstration of the proposed robot workflow.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/realtime_detect.py">Desktop runner</a></td>
+<td>Webcam loop, guidance thresholds and frame logging.</td>
+</tr>
+<tr>
+<td><a href="app.js">Browser controller</a> and <a href="detection.js">decoder</a></td>
+<td>Camera and still-image state, ONNX inference, box recovery and overlay rendering.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/tests/verify_export.py">Export parity check</a></td>
+<td>Numerical comparison of PyTorch and ONNX tensors on selected images.</td>
+</tr>
+</tbody>
+</table></div><input class="project-slider" type="range" aria-controls="evidence-table-5" aria-label="Scroll evidence table 5 horizontally" hidden>
+<p>To regenerate the workbook, install <code>openpyxl</code> and run the <a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/scripts/build_evidence_workbook.py">workbook builder</a> from the repository root.</p>
+<div class="project-scroll" id="evidence-table-6" tabindex="0" role="region" aria-label="Evidence table 6"><pre><code class="language-powershell">python scripts/build_evidence_workbook.py ../ShuttleCock_YOLO_Dataset.zip
+</code></pre></div><input class="project-slider" type="range" aria-controls="evidence-table-6" aria-label="Scroll evidence table 6 horizontally" hidden>
+</section>
+<section class="project-section" id="csv-and-code-reference">
+<h2>CSV and Code Reference</h2>
+<h3>Reading the CSV files</h3>
+<div class="project-scroll" id="code-reference-table-1" tabindex="0" role="region" aria-label="Reference table 1"><table>
+<thead>
+<tr>
+<th scope="col">File</th>
+<th scope="col" style="text-align:right">Rows</th>
+<th scope="col">Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/My%20Drive/ShuttleBot/runs/shuttle_train_v1/results.csv">Training results</a></td>
+<td style="text-align:right">50</td>
+<td>One row per epoch, with training and validation losses, validation scores, elapsed training time and learning rates for three parameter groups.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/detection_log.csv">Desktop session</a></td>
+<td style="text-align:right">3,153</td>
+<td>One row per processed webcam frame, including the detector output and selected guidance action.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/archive/original/detection_log.csv">Archived desktop session</a></td>
+<td style="text-align:right">1,992</td>
+<td>An earlier capture using the same column layout.</td>
+</tr>
+<tr>
+<td><a href="shuttlebot-evidence.xlsx">Evidence workbook</a></td>
+<td style="text-align:right">8 sheets</td>
+<td>Split audit, epoch history, milestones, saved test scores and both frame logs in filterable sheets.</td>
+</tr>
+</tbody>
+</table></div><input class="project-slider" type="range" aria-controls="code-reference-table-1" aria-label="Scroll reference table 1 horizontally" hidden>
+<p>In the training CSV, <code>train/*_loss</code> and <code>val/*_loss</code> record box localization, classification and distribution focal loss (DFL). The <code>metrics/*(B)</code> columns are bounding-box validation metrics. The <code>lr/pg0</code> through <code>lr/pg2</code> columns save optimizer learning rates. Read the metrics by epoch to trace progress, and use the workbook's peak-epoch table to compare each metric separately.</p>
+<p>In the desktop logs, <code>timestamp_s</code> is elapsed session time and <code>frame_index</code> starts at zero. <code>detected</code> is 0 or 1. When it is 0, center coordinates use <code>-1</code>, and confidence, offsets and normalized area are zero. Filter to detected rows when analyzing target positions or confidence. <code>target_cx</code> and <code>target_cy</code> are frame pixels, <code>dx</code> and <code>dy</code> are signed offsets from the frame center, and <code>norm_area</code> is box area divided by frame area. <code>fps</code> is the desktop loop's per-frame estimate. A row describes one frame, so repeated action labels can belong to the same continuous event.</p>
+<h3>Follow the code from input to output</h3>
+<div class="project-scroll" id="code-reference-table-2" tabindex="0" role="region" aria-label="Reference table 2"><table>
+<thead>
+<tr>
+<th scope="col">File</th>
+<th scope="col">Role in the pipeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/app.py">Launcher</a></td>
+<td>Serves the Pages folder over localhost or dispatches to desktop, Gradio, and export entry points.</td>
+</tr>
+<tr>
+<td><a href="app.js">Browser controller</a></td>
+<td>Starts and stops the source, reuses the WASM model session, renders overlays and handles snapshot downloads. The still-image path caches the raw output for threshold changes.</td>
+</tr>
+<tr>
+<td><a href="detection.js">Browser decoder</a></td>
+<td>Calculates letterbox padding, builds the normalized RGB tensor, maps boxes into original frame pixels, and suppresses overlapping detections.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/realtime_detect.py">Desktop runner</a></td>
+<td>Takes camera frames through Ultralytics YOLO, selects the strongest box, calculates a guidance action and writes CSV rows. Use <code>--log-csv</code> with a fresh path to preserve the saved sample log.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/scripts/export_browser_model.py">Export script</a></td>
+<td>Exports the canonical checkpoint to ONNX and writes input metadata and model checksums.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/tests/verify_export.py">Numerical parity check</a></td>
+<td>Reads selected saved inputs, runs the PyTorch and ONNX models, and compares raw tensors within tolerance.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/tests/browser_review.py">Browser checks</a></td>
+<td>Exercises themes, responsive navigation, gallery, still-image detection and simulated camera behavior.</td>
+</tr>
+</tbody>
+</table></div><input class="project-slider" type="range" aria-controls="code-reference-table-2" aria-label="Scroll reference table 2 horizontally" hidden>
+<p>For local inference, start with <code>python app.py web</code> from the repo folder. The HTML file also supports a direct preview for project content, theme and gallery. The local server supplies the JavaScript modules and model files used by the detector.</p>
+</section>
+<section class="project-section" id="limitations"><h2>Limitations</h2>
+<p>Small and fast-moving shuttlecocks, clutter, lighting and motion blur can reduce confidence. Accuracy on one saved evaluation set cannot establish performance on every court or camera. WebAssembly speed depends on the device. The browser shows boxes and coordinates. Robot commands and CSV logging belong to the desktop application.</p></section>
+<section class="project-section" id="folder-structure"><h2>Folder Structure</h2>
+<div class="project-scroll" id="folder-tree" tabindex="0"><pre><code>docs/                     Pages app, ONNX, WASM, gallery, video
+ShuttleBotRealtime/       Canonical PyTorch checkpoint
+My Drive/ShuttleBot/      Saved training and evaluation artifacts
+webapp/                   Gradio application
+scripts/                  Export, dataset preparation, figure generation
+tests/                    Decoder and model checks
+archive/                  Earlier submission variants</code></pre></div><input class="project-slider" type="range" aria-label="Scroll folder tree horizontally" aria-controls="folder-tree" hidden></section>
+<section class="project-section" id="gallery"><h2>Screenshot Gallery</h2>
+<div class="project-filters"><label>Search figures<input type="search" id="gallery-search" placeholder="Try “ONNX”"></label><label>Category<select id="gallery-category"><option value="">All categories</option><option>Inference</option><option>Training evidence</option><option>Implementation</option></select></label></div><p id="gallery-count" aria-live="polite">24 of 24 figures</p>
+<div class="project-gallery"><figure data-category="Inference"><a href="figures/full/01_onnx_detection_on_a_test_image.png" aria-label="View ONNX detection on a test image"><img src="figures/preview/01_onnx_detection_on_a_test_image.webp" loading="lazy" width="960" height="600" alt="ONNX detection on a test image"></a><figcaption><strong>ONNX detection on a test image</strong><span>The original browser export predicts this box on a repository sample. The label shows its actual confidence.</span></figcaption></figure>
+<figure data-category="Inference"><a href="figures/full/02_the_letterboxed_model_input.png" aria-label="View The letterboxed model input"><img src="figures/preview/02_the_letterboxed_model_input.webp" loading="lazy" width="960" height="600" alt="The letterboxed model input"></a><figcaption><strong>The letterboxed model input</strong><span>The same sample is resized with its aspect ratio intact, padded to 320 × 320, then normalized for inference.</span></figcaption></figure>
+<figure data-category="Inference"><a href="figures/full/03_detector_output_and_coordinates.png" aria-label="View Detector output and coordinates"><img src="figures/preview/03_detector_output_and_coordinates.webp" loading="lazy" width="960" height="600" alt="Detector output and coordinates"></a><figcaption><strong>Detector output and coordinates</strong><span>The highest-confidence candidate is mapped back into original image coordinates.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/04_precision_and_recall.png" aria-label="View Precision and recall"><img src="figures/preview/04_precision_and_recall.webp" loading="lazy" width="960" height="600" alt="Precision and recall"></a><figcaption><strong>Precision and recall</strong><span>The original validation history records how precision and recall changed across training.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/05_mean_average_precision.png" aria-label="View Mean average precision"><img src="figures/preview/05_mean_average_precision.webp" loading="lazy" width="960" height="600" alt="Mean average precision"></a><figcaption><strong>Mean average precision</strong><span>mAP at IoU 0.50 and mAP averaged across IoU 0.50 to 0.95 measure different localization strictness.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/06_bounding_box_loss.png" aria-label="View Bounding box loss"><img src="figures/preview/06_bounding_box_loss.webp" loading="lazy" width="960" height="600" alt="Bounding box loss"></a><figcaption><strong>Bounding box loss</strong><span>Training and validation loss from the original 50-epoch run.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/07_classification_loss.png" aria-label="View Classification loss"><img src="figures/preview/07_classification_loss.webp" loading="lazy" width="960" height="600" alt="Classification loss"></a><figcaption><strong>Classification loss</strong><span>Training and validation loss from the original 50-epoch run.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/08_distribution_focal_loss.png" aria-label="View Distribution focal loss"><img src="figures/preview/08_distribution_focal_loss.webp" loading="lazy" width="960" height="600" alt="Distribution focal loss"></a><figcaption><strong>Distribution focal loss</strong><span>Training and validation loss from the original 50-epoch run.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/09_training_label_distribution.png" aria-label="View Training label distribution"><img src="figures/preview/09_training_label_distribution.webp" loading="lazy" width="960" height="600" alt="Training label distribution"></a><figcaption><strong>Training label distribution</strong><span>Saved training-run plot showing label locations and box sizes.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/10_precision_recall_curve.png" aria-label="View Precision recall curve"><img src="figures/preview/10_precision_recall_curve.webp" loading="lazy" width="960" height="600" alt="Precision recall curve"></a><figcaption><strong>Precision recall curve</strong><span>Saved threshold trade-off from the CPU evaluation artifacts.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/11_f1_confidence_curve.png" aria-label="View F1 confidence curve"><img src="figures/preview/11_f1_confidence_curve.webp" loading="lazy" width="960" height="600" alt="F1 confidence curve"></a><figcaption><strong>F1 confidence curve</strong><span>Saved evaluation curve summarizes precision and recall at different confidence thresholds.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/12_precision_confidence_curve.png" aria-label="View Precision confidence curve"><img src="figures/preview/12_precision_confidence_curve.webp" loading="lazy" width="960" height="600" alt="Precision confidence curve"></a><figcaption><strong>Precision confidence curve</strong><span>Precision changes as low-confidence candidates are removed.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/13_normalized_confusion_matrix.png" aria-label="View Normalized confusion matrix"><img src="figures/preview/13_normalized_confusion_matrix.webp" loading="lazy" width="960" height="600" alt="Normalized confusion matrix"></a><figcaption><strong>Normalized confusion matrix</strong><span>The evaluation artifact summarizes class and background results as proportions.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/14_evaluation_confusion_counts.png" aria-label="View Evaluation confusion counts"><img src="figures/preview/14_evaluation_confusion_counts.webp" loading="lazy" width="960" height="600" alt="Evaluation confusion counts"></a><figcaption><strong>Evaluation confusion counts</strong><span>The raw matrix uses counts and includes the background category.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/15_evaluation_labels.png" aria-label="View Evaluation labels"><img src="figures/preview/15_evaluation_labels.webp" loading="lazy" width="960" height="600" alt="Evaluation labels"></a><figcaption><strong>Evaluation labels</strong><span>The saved test mosaic shows the annotated boxes used for comparison.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/16_evaluation_predictions.png" aria-label="View Evaluation predictions"><img src="figures/preview/16_evaluation_predictions.webp" loading="lazy" width="960" height="600" alt="Evaluation predictions"></a><figcaption><strong>Evaluation predictions</strong><span>The matching evaluation mosaic shows model predictions and confidence labels.</span></figcaption></figure>
+<figure data-category="Implementation"><a href="figures/full/17_aspect_ratio_preserving_resize.png" aria-label="View Aspect ratio preserving resize"><img src="figures/preview/17_aspect_ratio_preserving_resize.webp" loading="lazy" width="960" height="600" alt="Aspect ratio preserving resize"></a><figcaption><strong>Aspect ratio preserving resize</strong><span>The browser keeps its letterbox scale and padding for coordinate restoration.</span></figcaption></figure>
+<figure data-category="Implementation"><a href="figures/full/18_rgb_input_conversion.png" aria-label="View RGB input conversion"><img src="figures/preview/18_rgb_input_conversion.webp" loading="lazy" width="960" height="600" alt="RGB input conversion"></a><figcaption><strong>RGB input conversion</strong><span>The browser transforms RGBA pixels into normalized planar RGB.</span></figcaption></figure>
+<figure data-category="Implementation"><a href="figures/full/19_confidence_and_box_decoding.png" aria-label="View Confidence and box decoding"><img src="figures/preview/19_confidence_and_box_decoding.webp" loading="lazy" width="960" height="600" alt="Confidence and box decoding"></a><figcaption><strong>Confidence and box decoding</strong><span>The decoder reads the candidate score and converts model-space boxes back into frame pixels.</span></figcaption></figure>
+<figure data-category="Implementation"><a href="figures/full/20_suppressing_overlapping_candidates.png" aria-label="View Suppressing overlapping candidates"><img src="figures/preview/20_suppressing_overlapping_candidates.webp" loading="lazy" width="960" height="600" alt="Suppressing overlapping candidates"></a><figcaption><strong>Suppressing overlapping candidates</strong><span>Candidates are ranked by confidence and compared with already selected boxes.</span></figcaption></figure>
+<figure data-category="Implementation"><a href="figures/full/21_browser_runtime_initialization.png" aria-label="View Browser runtime initialization"><img src="figures/preview/21_browser_runtime_initialization.webp" loading="lazy" width="960" height="600" alt="Browser runtime initialization"></a><figcaption><strong>Browser runtime initialization</strong><span>The live detector loads the local ONNX model and runs it with the vendored WebAssembly runtime.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/22_dataset_split_counts.png" aria-label="View Dataset split counts"><img src="figures/preview/22_dataset_split_counts.webp" loading="lazy" width="960" height="600" alt="Dataset split counts"></a><figcaption><strong>Dataset split counts</strong><span>Counts are taken from the preserved YOLO training archive. Each image has a corresponding text label.</span></figcaption></figure>
+<figure data-category="Training evidence"><a href="figures/full/23_final_validation_metrics.png" aria-label="View Final validation metrics"><img src="figures/preview/23_final_validation_metrics.webp" loading="lazy" width="960" height="600" alt="Final validation metrics"></a><figcaption><strong>Final validation metrics</strong><span>Epoch 50 values are from the training validation history and are separate from local inference checks.</span></figcaption></figure>
+<figure data-category="Implementation"><a href="figures/full/24_checkpoint_export_parity.png" aria-label="View Checkpoint export parity"><img src="figures/preview/24_checkpoint_export_parity.webp" loading="lazy" width="960" height="600" alt="Checkpoint export parity"></a><figcaption><strong>Checkpoint export parity</strong><span>The verification script compares raw CPU ONNX predictions to the PyTorch checkpoint within numeric tolerance.</span></figcaption></figure></div></section>
+<section class="project-section" id="about-the-author"><h2>About the Author</h2>
+<p>Mohammad Rohaan developed ShuttleBot’s vision workflow as part of a machine learning and robotics project. His work spans fine-tuning a YOLOv8n detector, examining validation and test results, and connecting detections to desktop guidance rules. The browser demo makes the same trained checkpoint accessible through an ONNX export.</p>
+<ul>
+<li><strong>Training and evaluation</strong> · <a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/i222327_ML_FINALPROJECT.ipynb">Colab notebook</a> and <a href="shuttlebot-evidence.xlsx">evidence workbook</a></li>
+<li><strong>Browser inference and robotics integration</strong> · <a href="app.js">Browser controller</a> and <a href="https://github.com/rohaan2802/ShuttleCock-Detection/blob/main/realtime_detect.py">desktop guidance code</a></li>
+<li><strong>Profile</strong> · <a href="https://github.com/rohaan2802">Mohammad Rohaan on GitHub</a></li>
+</ul>
+</section><footer><span><span class="footer-dot"></span> Built for ShuttleBot <span class="footer-divider">/</span> Mohammad Rohaan · i222327</span><span>Free to use. Made to explore.</span></footer>
+</main><button class="project-icon" id="project-top" aria-label="Back to top" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5m-7 7 7-7 7 7"/></svg></button>
+<dialog id="project-viewer" aria-labelledby="figure-title"><h2 id="figure-title"></h2><div class="project-actions"><button id="figure-prev">Previous</button><button id="figure-next">Next</button><button id="figure-zoom" aria-pressed="false">Zoom</button><button id="figure-close" autofocus>Close</button></div><div class="project-stage" tabindex="0" role="region" aria-label="Full figure"><img src="figures/full/01_onnx_detection_on_a_test_image.png" alt=""></div><p class="viewer-caption"></p></dialog><script defer src="project.js"></script><script src="vendor/ort.min.js"></script><script type="module" src="app.js"></script></body></html>

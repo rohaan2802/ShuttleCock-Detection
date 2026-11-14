@@ -1,0 +1,146 @@
+[
+  {
+    "stem": "01_onnx_detection_on_a_test_image",
+    "title": "ONNX detection on a test image",
+    "caption": "The original browser export predicts this box on a repository sample. The label shows its actual confidence.",
+    "category": "Inference"
+  },
+  {
+    "stem": "02_the_letterboxed_model_input",
+    "title": "The letterboxed model input",
+    "caption": "The same sample is resized with its aspect ratio intact, padded to 320 × 320, then normalized for inference.",
+    "category": "Inference"
+  },
+  {
+    "stem": "03_detector_output_and_coordinates",
+    "title": "Detector output and coordinates",
+    "caption": "The highest-confidence candidate is mapped back into original image coordinates.",
+    "category": "Inference"
+  },
+  {
+    "stem": "04_precision_and_recall",
+    "title": "Precision and recall",
+    "caption": "The original validation history records how precision and recall changed across training.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "05_mean_average_precision",
+    "title": "Mean average precision",
+    "caption": "mAP at IoU 0.50 and mAP averaged across IoU 0.50 to 0.95 measure different localization strictness.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "06_bounding_box_loss",
+    "title": "Bounding box loss",
+    "caption": "Training and validation loss from the original 50-epoch run.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "07_classification_loss",
+    "title": "Classification loss",
+    "caption": "Training and validation loss from the original 50-epoch run.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "08_distribution_focal_loss",
+    "title": "Distribution focal loss",
+    "caption": "Training and validation loss from the original 50-epoch run.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "09_training_label_distribution",
+    "title": "Training label distribution",
+    "caption": "Saved training-run plot showing label locations and box sizes.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "10_precision_recall_curve",
+    "title": "Precision recall curve",
+    "caption": "Saved threshold trade-off from the CPU evaluation artifacts.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "11_f1_confidence_curve",
+    "title": "F1 confidence curve",
+    "caption": "Saved evaluation curve summarizes precision and recall at different confidence thresholds.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "12_precision_confidence_curve",
+    "title": "Precision confidence curve",
+    "caption": "Precision changes as low-confidence candidates are removed.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "13_normalized_confusion_matrix",
+    "title": "Normalized confusion matrix",
+    "caption": "The evaluation artifact summarizes class and background results as proportions.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "14_evaluation_confusion_counts",
+    "title": "Evaluation confusion counts",
+    "caption": "The raw matrix uses counts and includes the background category.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "15_evaluation_labels",
+    "title": "Evaluation labels",
+    "caption": "The saved test mosaic shows the annotated boxes used for comparison.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "16_evaluation_predictions",
+    "title": "Evaluation predictions",
+    "caption": "The matching evaluation mosaic shows model predictions and confidence labels.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "17_aspect_ratio_preserving_resize",
+    "title": "Aspect ratio preserving resize",
+    "caption": "The browser keeps its letterbox scale and padding for coordinate restoration.",
+    "category": "Implementation"
+  },
+  {
+    "stem": "18_rgb_input_conversion",
+    "title": "RGB input conversion",
+    "caption": "The browser transforms RGBA pixels into normalized planar RGB.",
+    "category": "Implementation"
+  },
+  {
+    "stem": "19_confidence_and_box_decoding",
+    "title": "Confidence and box decoding",
+    "caption": "The decoder reads the candidate score and converts model-space boxes back into frame pixels.",
+    "category": "Implementation"
+  },
+  {
+    "stem": "20_suppressing_overlapping_candidates",
+    "title": "Suppressing overlapping candidates",
+    "caption": "Candidates are ranked by confidence and compared with already selected boxes.",
+    "category": "Implementation"
+  },
+  {
+    "stem": "21_browser_runtime_initialization",
+    "title": "Browser runtime initialization",
+    "caption": "The live detector loads the local ONNX model and runs it with the vendored WebAssembly runtime.",
+    "category": "Implementation"
+  },
+  {
+    "stem": "22_dataset_split_counts",
+    "title": "Dataset split counts",
+    "caption": "Counts are taken from the preserved YOLO training archive. Each image has a corresponding text label.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "23_final_validation_metrics",
+    "title": "Final validation metrics",
+    "caption": "Epoch 50 values are from the training validation history and are separate from local inference checks.",
+    "category": "Training evidence"
+  },
+  {
+    "stem": "24_checkpoint_export_parity",
+    "title": "Checkpoint export parity",
+    "caption": "The verification script compares raw CPU ONNX predictions to the PyTorch checkpoint within numeric tolerance.",
+    "category": "Implementation"
+  }
+]
