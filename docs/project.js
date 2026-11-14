@@ -22,7 +22,29 @@ function openMenu(open) {
   menu.setAttribute("aria-label", open ? "Close navigation menu" : "Open navigation menu");
 }
 menu.addEventListener("click", () => openMenu(!nav.classList.contains("open")));
-nav.addEventListener("click", event => { if (event.target.closest("a")) openMenu(false); });
+const navLinks = [...nav.querySelectorAll("a")];
+function highlight(link) {
+  for (const item of navLinks) {
+    if (item === link) item.setAttribute("aria-current", "location");
+    else item.removeAttribute("aria-current");
+  }
+}
+function highlightLocation() {
+  highlight(navLinks.find(link => link.hash === location.hash) ?? navLinks[0]);
+}
+addEventListener("hashchange", highlightLocation);
+highlightLocation();
+nav.addEventListener("click", event => {
+  const link = event.target.closest("a");
+  if (!link) return;
+  highlight(link);
+  openMenu(false);
+});
+document.addEventListener("click", event => {
+  if (nav.classList.contains("open") && !nav.contains(event.target) && !menu.contains(event.target)) {
+    openMenu(false);
+  }
+});
 nav.addEventListener("keydown", event => {
   if (event.key === "Escape") { openMenu(false); menu.focus(); }
 });
@@ -37,15 +59,24 @@ scrollState();
 topButton.addEventListener("click", () => { document.querySelector(".brand").focus({preventScroll:true}); scrollTo({top:0}); });
 for (const slider of document.querySelectorAll(".project-slider")) {
   const panel = document.getElementById(slider.getAttribute("aria-controls"));
+  const maxScroll = () => panel.scrollWidth - panel.clientWidth;
+  const steps = 1000;
+  slider.min = 0;
+  slider.max = steps;
+  slider.step = 1;
   function sync() {
-    const width = panel.scrollWidth - panel.clientWidth;
-    slider.hidden = width < 2;
-    slider.max = Math.max(1, width);
-    slider.value = panel.scrollLeft;
+    const limit = maxScroll();
+    slider.hidden = limit < 1;
+    slider.value = limit > 0 ? Math.round(panel.scrollLeft / limit * steps) : 0;
   }
-  slider.addEventListener("input", () => { panel.scrollLeft = Number(slider.value); });
-  panel.addEventListener("scroll", sync);
-  new ResizeObserver(sync).observe(panel);
+  slider.addEventListener("input", () => {
+    panel.scrollTo({left: maxScroll() * Number(slider.value) / steps, behavior: "instant"});
+  });
+  panel.addEventListener("scroll", sync, {passive:true});
+  const observer = new ResizeObserver(sync);
+  observer.observe(panel);
+  if (panel.firstElementChild) observer.observe(panel.firstElementChild);
+  sync();
 }
 const cards = [...document.querySelectorAll(".project-gallery figure")];
 const search = document.querySelector("#gallery-search");

@@ -81,10 +81,18 @@ def verify(browser, url, width, height, theme, columns):
     page.keyboard.press("Escape")
     expect(page.locator("#project-viewer")).to_be_hidden()
     if width == 390:
+        for slider in page.locator(".project-slider:visible").all():
+            panel = page.locator("#" + slider.get_attribute("aria-controls"))
+            slider.focus()
+            page.keyboard.press("End")
+            assert panel.evaluate("(el) => Math.abs(el.scrollWidth - el.clientWidth - el.scrollLeft) <= 1")
+            page.keyboard.press("Home")
+            assert panel.evaluate("(el) => el.scrollLeft === 0")
         slider = page.locator('[aria-controls="live-links"]')
-        slider.focus()
-        page.keyboard.press("End")
-        assert page.locator("#live-links").evaluate("(el) => el.scrollLeft") > 0
+        slider.scroll_into_view_if_needed()
+        box = slider.bounding_box()
+        page.touchscreen.tap(box["x"] + box["width"] - 2, box["y"] + box["height"] / 2)
+        expect(slider).to_have_value("1000")
     if width == 1440 and theme == "light":
         page.wait_for_function("document.querySelector('.simulation-player').readyState >= 2")
         video = page.locator(".simulation-player")
