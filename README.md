@@ -256,14 +256,6 @@ archive/                  Earlier submission variants
 
 ## Screenshots
 
-[1](#1-onnx-detection-on-a-test-image) · [2](#2-the-letterboxed-model-input) · [3](#3-detector-output-and-coordinates) · [4](#4-precision-and-recall) · [5](#5-mean-average-precision) · [6](#6-bounding-box-loss)
-
-[7](#7-classification-loss) · [8](#8-distribution-focal-loss) · [9](#9-training-label-distribution) · [10](#10-precision-recall-curve) · [11](#11-f1-confidence-curve) · [12](#12-precision-confidence-curve)
-
-[13](#13-normalized-confusion-matrix) · [14](#14-evaluation-confusion-counts) · [15](#15-evaluation-labels) · [16](#16-evaluation-predictions) · [17](#17-aspect-ratio-preserving-resize) · [18](#18-rgb-input-conversion)
-
-[19](#19-confidence-and-box-decoding) · [20](#20-suppressing-overlapping-candidates) · [21](#21-browser-runtime-initialization) · [22](#22-dataset-split-counts) · [23](#23-final-validation-metrics) · [24](#24-checkpoint-export-parity)
-
 ### 1. ONNX detection on a test image
 
 <p align="left"><a href="docs/figures/full/01_onnx_detection_on_a_test_image.png"><img src="docs/figures/preview/01_onnx_detection_on_a_test_image.webp" width="900" alt="ONNX detection on a test image"></a></p>
